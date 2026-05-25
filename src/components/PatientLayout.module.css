@@ -1,0 +1,83 @@
+.root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 60px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; }
+.brandIcon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #e8c4a8 0%, #c4906e 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(196,144,110,0.30);
+}
+.brandName {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  display: block;
+  line-height: 1.1;
+}
+.brandSub {
+  font-size: 10.5px;
+  color: var(--text3);
+}
+
+.right { display: flex; align-items: center; gap: 14px; }
+.greeting {
+  font-size: 13.5px;
+  color: var(--text2);
+  font-weight: 500;
+}
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text3);
+  transition: background 0.15s, color 0.15s;
+}
+.logoutBtn:hover { background: var(--bg3); color: var(--text2); }
+
+/* ── Content ─────────────────────────────────────────────────────────────── */
+.content {
+  flex: 1;
+  padding: 28px 24px;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.footer {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text3);
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 480px) {
+  .greeting { display: none; }
+  .content { padding: 20px 16px; }
+}

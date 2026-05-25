@@ -1,0 +1,122 @@
+.page { display: flex; flex-direction: column; gap: 18px; }
+
+/* ── Welcome ─────────────────────────────────────────────────────────────── */
+.welcome {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.welcomeIcon { font-size: 28px; }
+.welcomeTitle {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px; font-weight: 600; color: var(--text);
+}
+.welcomeSub { font-size: 13px; color: var(--text3); margin-top: 3px; }
+
+/* ── Next session card ───────────────────────────────────────────────────── */
+.nextCard {
+  background: linear-gradient(135deg, #f4ede6 0%, #ede0d4 100%);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-radius: var(--radius-md, 12px);
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.nextCardIcon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e8c4a8 0%, #c4906e 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(196,144,110,0.30);
+  flex-shrink: 0;
+}
+.nextCardInfo { display: flex; flex-direction: column; gap: 3px; }
+.nextCardLabel { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); font-weight: 600; }
+.nextCardDate {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 600; color: var(--text); text-transform: capitalize;
+}
+.nextCardMeta {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--text2);
+}
+
+.noNext {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 20px;
+  background: var(--bg3);
+  border-radius: var(--radius-md, 12px);
+  font-size: 13px; color: var(--text3);
+}
+
+/* ── Stats ───────────────────────────────────────────────────────────────── */
+.statsRow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.statCard {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.statVal   { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.statLabel { font-size: 12px; color: var(--text3); }
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+.card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px); padding: 18px 20px;
+}
+.cardTitle {
+  display: flex; align-items: center; gap: 7px;
+  font-family: 'Playfair Display', serif;
+  font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 14px;
+}
+
+/* ── Session list ────────────────────────────────────────────────────────── */
+.sessionList { display: flex; flex-direction: column; gap: 0; }
+.sessionRow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.sessionRow:last-child { border-bottom: none; }
+
+.sessionDateCol { min-width: 80px; }
+.sessionDate { display: block; font-size: 13.5px; font-weight: 500; color: var(--text); text-transform: capitalize; }
+.sessionTime { display: block; font-size: 12px; color: var(--text3); }
+
+.sessionMeta { flex: 1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.modalTag {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 12px; color: var(--text3);
+  background: var(--bg3); padding: 2px 8px; border-radius: 6px;
+}
+.statusTag { display: flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 500; }
+
+.sessionRight { flex-shrink: 0; }
+.paidTag {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 11px; color: var(--green); font-weight: 500;
+}
+.pendingTag {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 11px; color: var(--amber); font-weight: 500;
+}
+
+/* ── Privacy note ────────────────────────────────────────────────────────── */
+.privacyNote {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: color-mix(in srgb, var(--purple) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--purple) 18%, transparent);
+  border-radius: var(--radius-md, 12px); padding: 14px 16px;
+  font-size: 12.5px; color: var(--text3); line-height: 1.6;
+}
+.privacyNote span { font-size: 18px; flex-shrink: 0; }
+
+/* ── Empty / error ───────────────────────────────────────────────────────── */
+.empty { font-size: 13px; color: var(--text3); }
+.error { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 20px; color: var(--text3); }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 500px) {
+  .statsRow { grid-template-columns: 1fr 1fr; }
+}
