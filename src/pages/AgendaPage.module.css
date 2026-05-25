@@ -1,0 +1,291 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 960px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text);
+}
+.sub {
+  font-size: 13px;
+  color: var(--text3);
+  margin-top: 4px;
+  text-transform: capitalize;
+}
+.btnPrimary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm, 8px);
+  background: linear-gradient(135deg, #d4a882 0%, #c4906e 100%);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(196,144,110,0.30);
+  transition: opacity 0.2s;
+}
+.btnPrimary:hover { opacity: 0.9; }
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items: start;
+}
+
+/* ── Calendar card ───────────────────────────────────────────────────────── */
+.calCard {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px);
+  padding: 18px;
+}
+.calNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.navBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  color: var(--text2);
+  transition: background 0.15s;
+}
+.navBtn:hover { background: var(--bg3); }
+.calMonth {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+/* ── Week header ─────────────────────────────────────────────────────────── */
+.weekHeader {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+.weekDay {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 0;
+}
+
+/* ── Day grid ────────────────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.dayCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  min-height: 48px;
+  gap: 3px;
+}
+.dayCell:hover { background: var(--bg3); }
+.dayNum {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 400;
+  line-height: 1;
+}
+.dayOtherMonth .dayNum { color: var(--text3); opacity: 0.5; }
+.dayToday .dayNum {
+  background: var(--accent);
+  color: #fff;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+}
+.daySelected {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.daySelected .dayNum { font-weight: 600; color: var(--accent); }
+.dayToday.daySelected .dayNum { background: var(--accent); color: #fff; }
+
+/* ── Dots ────────────────────────────────────────────────────────────────── */
+.dayDots {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.dotMore {
+  font-size: 9px;
+  color: var(--text3);
+}
+
+/* ── Legend ──────────────────────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* ── Day panel ───────────────────────────────────────────────────────────── */
+.dayPanel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px);
+  overflow: hidden;
+}
+.dayPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.dayPanelTitle {
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: capitalize;
+}
+.btnGhost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  border: 1px dashed var(--border3);
+  color: var(--text3);
+  transition: background 0.15s, border-color 0.15s;
+}
+.btnGhost:hover { background: var(--bg3); border-color: var(--accent); color: var(--accent); }
+
+.emptyDay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 32px 20px;
+  font-size: 13px;
+  color: var(--text3);
+}
+.btnGhostFull {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px dashed var(--border3);
+  font-size: 13px;
+  color: var(--text2);
+  transition: background 0.15s;
+}
+.btnGhostFull:hover { background: var(--bg3); }
+
+/* ── Day session items ───────────────────────────────────────────────────── */
+.daySessions {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.daySession {
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.daySession:hover { opacity: 0.85; }
+.dsTime {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.dsDuration {
+  font-size: 11px;
+  background: rgba(0,0,0,0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.dsInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dsAvatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+.dsName {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.dsMeta {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text2);
+}
+.dsMeta span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+}
