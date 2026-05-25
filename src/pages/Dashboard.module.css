@@ -1,0 +1,333 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1100px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+.sub {
+  font-size: 13px;
+  color: var(--text3);
+  margin-top: 4px;
+  text-transform: capitalize;
+}
+
+/* ── KPI Grid ────────────────────────────────────────────────────────────── */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.kpiCard {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.kpiIcon {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.kpiBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.kpiValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+.kpiLabel {
+  font-size: 12px;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Main grid ───────────────────────────────────────────────────────────── */
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 16px;
+  align-items: start;
+}
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px);
+  overflow: hidden;
+}
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.cardTitle {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+/* ── Session list ────────────────────────────────────────────────────────── */
+.sessionList {
+  padding: 8px 0;
+}
+.sessionItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.sessionItem:hover { background: var(--bg3); }
+
+.sessionAvatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg3));
+  color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.sessionInfo {
+  flex: 1;
+  min-width: 0;
+}
+.sessionName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sessionMeta {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text3);
+}
+.sessionMeta span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.sessionStatus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* ── Upcoming list ───────────────────────────────────────────────────────── */
+.upcomingList {
+  padding: 8px 0;
+}
+.upcomingItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.upcomingItem:hover { background: var(--bg3); }
+.upcomingDay {
+  display: flex;
+  flex-direction: column;
+  min-width: 72px;
+}
+.upcomingDayLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: capitalize;
+}
+.upcomingTime {
+  font-size: 11px;
+  color: var(--text3);
+}
+.upcomingName {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Patient list ────────────────────────────────────────────────────────── */
+.patientList {
+  padding: 8px 0;
+}
+.patientItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.patientItem:hover { background: var(--bg3); }
+.patientInfo {
+  flex: 1;
+  min-width: 0;
+}
+.patientName {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.patientSub {
+  font-size: 12px;
+  color: var(--text3);
+  display: block;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btnPrimary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm, 8px);
+  background: linear-gradient(135deg, #d4a882 0%, #c4906e 100%);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(196,144,110,0.30);
+  transition: opacity 0.2s, transform 0.15s;
+}
+.btnPrimary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.btnLink {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 500;
+}
+.btnLink:hover { text-decoration: underline; }
+
+.btnGhost {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px dashed var(--border3);
+  font-size: 13px;
+  color: var(--text2);
+  transition: background 0.15s, border-color 0.15s;
+  margin-top: 4px;
+}
+.btnGhost:hover { background: var(--bg3); border-color: var(--accent); }
+
+.btnInline {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 24px;
+  color: var(--text3);
+  font-size: 13px;
+}
+.emptyText {
+  font-size: 13px;
+  color: var(--text3);
+  padding: 16px 18px;
+}
+
+/* ── Onboarding banner ───────────────────────────────────────────────────── */
+.onboarding {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: color-mix(in srgb, var(--accent) 9%, #fff);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-radius: var(--radius-md, 12px);
+  padding: 18px 20px;
+  font-size: 14px;
+  color: var(--text2);
+}
+.onboarding span { font-size: 22px; }
+.onboarding strong { display: block; color: var(--text); font-size: 15px; margin-bottom: 4px; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .kpiGrid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 860px) {
+  .mainGrid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .kpiGrid { grid-template-columns: 1fr 1fr; }
+  .kpiValue { font-size: 16px; }
+}
