@@ -9,6 +9,7 @@ import { SessionForm }      from './pages/SessionForm'
 import { AgendaPage }       from './pages/AgendaPage'
 import { FinancialPage }    from './pages/FinancialPage'
 import { SettingsPage }     from './pages/SettingsPage'
+import { HelpPage }         from './pages/HelpPage'
 import { PatientLayout }    from './components/PatientLayout'
 import { PatientDashboard } from './pages/patient/PatientDashboard'
 
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="agenda"             element={<AgendaPage/>}/>
           <Route path="financeiro"         element={<FinancialPage/>}/>
           <Route path="configuracoes"      element={<SettingsPage/>}/>
+          <Route path="ajuda"              element={<HelpPage/>}/>
         </Route>
 
         {/* Paciente portal */}

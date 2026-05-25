@@ -66,6 +66,53 @@
 .btnSubmit:disabled { opacity: 0.45; cursor: not-allowed; }
 .btnSubmit:hover:not(:disabled) { opacity: 0.9; }
 
+/* Section desc */
+.sectionDesc {
+  font-size: 13px; color: var(--text3); margin-bottom: 14px; line-height: 1.6;
+}
+
+/* Backup */
+.backupStats {
+  display: flex; gap: 0;
+  background: var(--bg3); border-radius: var(--radius-sm);
+  border: 1px solid var(--border2); overflow: hidden;
+  margin-bottom: 14px;
+}
+.backupStat {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 12px 8px; border-right: 1px solid var(--border2);
+  gap: 3px;
+}
+.backupStat:last-child { border-right: none; }
+.backupStatVal   { font-size: 22px; font-weight: 700; color: var(--text); }
+.backupStatLabel { font-size: 11px; color: var(--text3); }
+
+.backupActions { display: flex; gap: 10px; flex-wrap: wrap; }
+.btnExport {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, #d4a882 0%, #c4906e 100%);
+  color: #fff; font-size: 13.5px; font-weight: 600;
+  box-shadow: 0 3px 10px rgba(196,144,110,0.30); transition: opacity 0.2s;
+}
+.btnExport:hover { opacity: 0.9; }
+.btnImport {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: var(--radius-sm);
+  background: var(--bg3); border: 1px solid var(--border3);
+  color: var(--text2); font-size: 13.5px; font-weight: 600; transition: background 0.15s;
+}
+.btnImport:hover { background: var(--bg4); }
+
+.importMsg {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; margin-top: 12px;
+}
+.importOk  { background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green); }
+.importErr { background: color-mix(in srgb, var(--red)   12%, transparent); color: var(--red); }
+.importNote { font-size: 12px; color: var(--amber); margin-top: 6px; }
+
 /* Password wrap */
 .pwdWrap { position: relative; }
 .pwdWrap input { padding-right: 38px !important; }

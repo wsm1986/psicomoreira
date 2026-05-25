@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Save, User, Clock, DollarSign, Shield, Eye, EyeOff } from 'lucide-react'
-import { usePsicoStore } from '../store/store'
+import { format } from 'date-fns'
+import { Save, User, Clock, DollarSign, Shield, Eye, EyeOff, Download, Upload, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { usePsicoStore, type BackupData } from '../store/store'
 import styles from './SettingsPage.module.css'
 
 const schema = z.object({
@@ -31,9 +32,58 @@ const DAYS = [
 ]
 
 export function SettingsPage() {
-  const config     = usePsicoStore(s => s.config)
-  const editConfig = usePsicoStore(s => s.editConfig)
-  const [showPwd, setShowPwd] = useState(false)
+  const config       = usePsicoStore(s => s.config)
+  const patients     = usePsicoStore(s => s.patients)
+  const sessions     = usePsicoStore(s => s.sessions)
+  const documents    = usePsicoStore(s => s.documents)
+  const editConfig   = usePsicoStore(s => s.editConfig)
+  const importBackup = usePsicoStore(s => s.importBackup)
+
+  const [showPwd,      setShowPwd]      = useState(false)
+  const [importStatus, setImportStatus] = useState<'idle' | 'ok' | 'error'>('idle')
+  const [importMsg,    setImportMsg]    = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  // ── Export JSON ────────────────────────────────────────────────────────────
+  function handleExport() {
+    const data: BackupData = {
+      version:    '1.0',
+      exportedAt: new Date().toISOString(),
+      patients,
+      sessions,
+      documents,
+      config,
+    }
+    const json = JSON.stringify(data, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `psicomoreira-backup-${format(new Date(), 'yyyy-MM-dd')}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // ── Import JSON ────────────────────────────────────────────────────────────
+  function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string) as BackupData
+        if (!data.patients || !data.sessions) throw new Error('Arquivo inválido')
+        importBackup(data)
+        setImportStatus('ok')
+        setImportMsg(`✓ Importado: ${data.patients.length} pacientes, ${data.sessions.length} sessões`)
+      } catch {
+        setImportStatus('error')
+        setImportMsg('Arquivo inválido ou corrompido.')
+      }
+    }
+    reader.readAsText(file)
+    if (fileRef.current) fileRef.current.value = ''
+  }
 
   const { register, handleSubmit, reset, formState: { errors, isDirty, isSubmitSuccessful } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -199,6 +249,62 @@ export function SettingsPage() {
             </div>
 
           </div>
+        </section>
+
+        {/* ── Backup ───────────────────────────────────────────────────── */}
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}><Download size={15}/> Backup de dados</h2>
+          <p className={styles.sectionDesc}>
+            Exporte um arquivo JSON com todos os seus dados (pacientes, sessões, configurações).
+            Guarde em local seguro — use para restaurar ou migrar para outro dispositivo.
+          </p>
+
+          <div className={styles.backupStats}>
+            <div className={styles.backupStat}>
+              <span className={styles.backupStatVal}>{patients.length}</span>
+              <span className={styles.backupStatLabel}>Pacientes</span>
+            </div>
+            <div className={styles.backupStat}>
+              <span className={styles.backupStatVal}>{sessions.length}</span>
+              <span className={styles.backupStatLabel}>Sessões</span>
+            </div>
+            <div className={styles.backupStat}>
+              <span className={styles.backupStatVal}>{documents.length}</span>
+              <span className={styles.backupStatLabel}>Documentos</span>
+            </div>
+          </div>
+
+          <div className={styles.backupActions}>
+            <button type="button" className={styles.btnExport} onClick={handleExport}>
+              <Download size={15}/> Exportar JSON
+            </button>
+            <button type="button" className={styles.btnImport} onClick={() => fileRef.current?.click()}>
+              <Upload size={15}/> Importar JSON
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json,application/json"
+              style={{ display: 'none' }}
+              onChange={handleImport}
+            />
+          </div>
+
+          {importStatus !== 'idle' && (
+            <div className={`${styles.importMsg} ${importStatus === 'ok' ? styles.importOk : styles.importErr}`}>
+              {importStatus === 'ok'
+                ? <CheckCircle2 size={14}/>
+                : <AlertTriangle size={14}/>
+              }
+              {importMsg}
+            </div>
+          )}
+
+          {importStatus === 'ok' && (
+            <p className={styles.importNote}>
+              ⚠️ Dados importados com sucesso. Por segurança, faça login novamente.
+            </p>
+          )}
         </section>
 
         {/* ── LGPD ─────────────────────────────────────────────────────── */}

@@ -52,6 +52,18 @@ interface PsicoState {
 
   // Config
   editConfig: (patch: Partial<ClinicConfig>) => void
+
+  // Backup / restore
+  importBackup: (data: BackupData) => void
+}
+
+export interface BackupData {
+  version:    string
+  exportedAt: string
+  patients:   Patient[]
+  sessions:   Session[]
+  documents:  PatientDocument[]
+  config:     ClinicConfig
 }
 
 export const usePsicoStore = create<PsicoState>()(
@@ -161,6 +173,17 @@ export const usePsicoStore = create<PsicoState>()(
       // ── Config ────────────────────────────────────────────────────────
       editConfig: (patch) => {
         set(s => ({ config: { ...s.config, ...patch } }))
+      },
+
+      // ── Backup / restore ──────────────────────────────────────────────
+      importBackup: (data) => {
+        set({
+          patients:  data.patients  ?? [],
+          sessions:  data.sessions  ?? [],
+          documents: data.documents ?? [],
+          config:    { ...DEFAULT_CONFIG, ...data.config },
+          auth:      { role: null, patientId: null, loggedIn: false },
+        })
       },
     }),
     {
