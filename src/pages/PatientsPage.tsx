@@ -58,7 +58,8 @@ export function PatientsPage() {
   const [showModal,    setShowModal] = useState(false)
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       startDate: format(new Date(), 'yyyy-MM-dd'),
       email: '',

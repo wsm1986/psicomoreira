@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
-  isSameMonth, isToday, parseISO, getDay, startOfWeek, endOfWeek,
+  isSameMonth, isToday, parseISO, startOfWeek, endOfWeek,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus, Clock, Video, MapPin } from 'lucide-react'

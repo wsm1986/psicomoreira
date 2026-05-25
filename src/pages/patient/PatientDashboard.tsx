@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
   CalendarCheck2, CheckCircle2, Clock, Video, MapPin,

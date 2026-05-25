@@ -34,7 +34,8 @@ export function SettingsPage() {
   const editConfig = usePsicoStore(s => s.editConfig)
 
   const { register, handleSubmit, reset, formState: { errors, isDirty, isSubmitSuccessful } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       clinicName:       config.clinicName,
       psychologistName: config.psychologistName,
