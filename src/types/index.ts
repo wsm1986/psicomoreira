@@ -85,6 +85,8 @@ export interface ClinicConfig {
   workingStart:      string   // "08:00"
   workingEnd:        string   // "18:00"
   lgpdText?:         string
+  /** Login password for psychologist */
+  password?:         string
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────

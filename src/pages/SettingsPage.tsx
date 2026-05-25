@@ -1,8 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Save, User, Clock, DollarSign, Shield } from 'lucide-react'
+import { Save, User, Clock, DollarSign, Shield, Eye, EyeOff } from 'lucide-react'
 import { usePsicoStore } from '../store/store'
 import styles from './SettingsPage.module.css'
 
@@ -16,6 +16,7 @@ const schema = z.object({
   sessionValue:     z.coerce.number().min(0),
   workingStart:     z.string(),
   workingEnd:       z.string(),
+  password:         z.string().min(4, 'Mínimo 4 caracteres').optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -32,6 +33,7 @@ const DAYS = [
 export function SettingsPage() {
   const config     = usePsicoStore(s => s.config)
   const editConfig = usePsicoStore(s => s.editConfig)
+  const [showPwd, setShowPwd] = useState(false)
 
   const { register, handleSubmit, reset, formState: { errors, isDirty, isSubmitSuccessful } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,6 +48,7 @@ export function SettingsPage() {
       sessionValue:     config.sessionValue,
       workingStart:     config.workingStart,
       workingEnd:       config.workingEnd,
+      password:         config.password ?? 'psico2025',
     },
   })
 
@@ -61,6 +64,7 @@ export function SettingsPage() {
       sessionValue:     config.sessionValue,
       workingStart:     config.workingStart,
       workingEnd:       config.workingEnd,
+      password:         config.password ?? 'psico2025',
     })
   }, [config, reset])
 
@@ -84,6 +88,7 @@ export function SettingsPage() {
       sessionValue:     data.sessionValue,
       workingStart:     data.workingStart,
       workingEnd:       data.workingEnd,
+      password:         data.password || 'psico2025',
     })
     reset(data) // clear dirty
   }
@@ -129,6 +134,24 @@ export function SettingsPage() {
             <div className={`${styles.field} ${styles.fullWidth}`}>
               <label className={styles.label}>Endereço</label>
               <input {...register('address')} placeholder="Rua, número, cidade..."/>
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>Senha de acesso (psicóloga)</label>
+              <div className={styles.pwdWrap}>
+                <input
+                  {...register('password')}
+                  type={showPwd ? 'text' : 'password'}
+                  placeholder="Mínimo 4 caracteres"
+                  className={errors.password ? styles.inputError : ''}
+                  style={{ paddingRight: 38 }}
+                />
+                <button type="button" className={styles.eyeBtn} onClick={() => setShowPwd(v => !v)} tabIndex={-1}>
+                  {showPwd ? <EyeOff size={15}/> : <Eye size={15}/>}
+                </button>
+              </div>
+              {errors.password && <span className={styles.errMsg}>{errors.password.message}</span>}
+              <span className={styles.hint}>Senha usada na aba "Psicóloga" da tela de login</span>
             </div>
 
           </div>

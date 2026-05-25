@@ -66,6 +66,18 @@
 .btnSubmit:disabled { opacity: 0.45; cursor: not-allowed; }
 .btnSubmit:hover:not(:disabled) { opacity: 0.9; }
 
+/* Password wrap */
+.pwdWrap { position: relative; }
+.pwdWrap input { padding-right: 38px !important; }
+.eyeBtn {
+  position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3); display: flex; align-items: center;
+  transition: color 0.15s;
+}
+.eyeBtn:hover { color: var(--text2); }
+.hint { font-size: 11px; color: var(--text3); }
+
 @media (max-width: 500px) {
   .grid { grid-template-columns: 1fr; }
 }

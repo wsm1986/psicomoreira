@@ -17,6 +17,7 @@ const DEFAULT_CONFIG: ClinicConfig = {
   workingDays:      [1, 2, 3, 4, 5],
   workingStart:     '08:00',
   workingEnd:       '18:00',
+  password:         'psico2025',
 }
 
 // ── Store shape ────────────────────────────────────────────────────────────
@@ -53,8 +54,6 @@ interface PsicoState {
   editConfig: (patch: Partial<ClinicConfig>) => void
 }
 
-const PSICO_PASSWORD = 'psico2025' // default — editable in settings
-
 export const usePsicoStore = create<PsicoState>()(
   persist(
     (set, get) => ({
@@ -66,7 +65,7 @@ export const usePsicoStore = create<PsicoState>()(
 
       // ── Auth ──────────────────────────────────────────────────────────
       loginPsicologa: (password) => {
-        if (password === PSICO_PASSWORD) {
+        if (password === (get().config.password ?? 'psico2025')) {
           set({ auth: { role: 'psicologa', patientId: null, loggedIn: true } })
           return true
         }

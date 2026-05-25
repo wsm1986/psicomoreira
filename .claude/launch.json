@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "psicomoreira-dev",
+      "runtimeExecutable": "/Users/wellingtonmoreira/Documents/psicomoreira/node_modules/.bin/vite",
+      "runtimeArgs": ["--port", "5174", "--host"],
+      "port": 5174
+    }
+  ]
+}

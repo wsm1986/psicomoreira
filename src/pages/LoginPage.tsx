@@ -118,6 +118,22 @@ export function LoginPage() {
 
         <p className={styles.footer}>🔒 Seus dados são protegidos conforme a LGPD</p>
       </div>
+
+      {/* Help panel */}
+      <div className={styles.helpCard}>
+        <p className={styles.helpTitle}>📋 Como acessar</p>
+        <div className={styles.helpItem}>
+          <Lock size={12}/> <strong>Psicóloga</strong>
+          <span>→ senha: <code className={styles.code}>psico2025</code></span>
+        </div>
+        <div className={styles.helpItem}>
+          <KeyRound size={12}/> <strong>Paciente</strong>
+          <span>→ código gerado no cadastro</span>
+        </div>
+        <p className={styles.helpHint}>
+          Cadastre sua primeira paciente como psicóloga, defina um código de acesso e ela poderá entrar pelo portal.
+        </p>
+      </div>
     </div>
   )
 }
