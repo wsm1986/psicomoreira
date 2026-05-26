@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_KEY } from '../config/app'
 import type {
-  Patient, Session, PatientDocument,
+  Patient, Session, PatientDocument, PatientAttachment,
+  Anamnese, PlanoTerapeutico,
   ClinicConfig, AuthState, PatientStatus,
 } from '../types'
 
@@ -11,6 +12,7 @@ const DEFAULT_CONFIG: ClinicConfig = {
   clinicName:       'PsicoMoreira',
   psychologistName: 'Dra. Moreira',
   crp:              '',
+  email:            '',
   phone:            '',
   sessionDuration:  50,
   sessionValue:     200,
@@ -20,64 +22,87 @@ const DEFAULT_CONFIG: ClinicConfig = {
   password:         'psico2025',
 }
 
-// ── Store shape ────────────────────────────────────────────────────────────
-interface PsicoState {
-  // Auth
-  auth:    AuthState
-  // Data
-  patients:  Patient[]
-  sessions:  Session[]
-  documents: PatientDocument[]
-  config:    ClinicConfig
-
-  // Auth actions
-  loginPsicologa:  (password: string) => boolean
-  loginPaciente:   (code: string) => boolean
-  logout:          () => void
-
-  // Patient actions
-  addPatient:    (p: Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>) => string
-  editPatient:   (id: string, patch: Partial<Patient>) => void
-  setStatus:     (id: string, status: PatientStatus) => void
-
-  // Session actions
-  addSession:    (s: Omit<Session, 'id' | 'createdAt' | 'updatedAt'>) => string
-  editSession:   (id: string, patch: Partial<Session>) => void
-  deleteSession: (id: string) => void
-
-  // Document actions
-  addDocument:    (d: Omit<PatientDocument, 'id' | 'createdAt'>) => string
-  deleteDocument: (id: string) => void
-  shareDocument:  (id: string, shared: boolean) => void
-
-  // Config
-  editConfig: (patch: Partial<ClinicConfig>) => void
-
-  // Backup / restore
-  importBackup: (data: BackupData) => void
-}
-
+// ── Backup shape ───────────────────────────────────────────────────────────
 export interface BackupData {
   version:    string
   exportedAt: string
   patients:   Patient[]
   sessions:   Session[]
   documents:  PatientDocument[]
+  attachments?:PatientAttachment[]
+  anamneses?: Anamnese[]
+  plans?:     PlanoTerapeutico[]
   config:     ClinicConfig
+}
+
+// ── Store shape ────────────────────────────────────────────────────────────
+interface PsicoState {
+  auth:        AuthState
+  patients:    Patient[]
+  sessions:    Session[]
+  documents:   PatientDocument[]
+  attachments: PatientAttachment[]
+  anamneses:   Anamnese[]
+  plans:       PlanoTerapeutico[]
+  config:      ClinicConfig
+
+  // Auth
+  loginPsicologa:  (password: string, email?: string) => boolean
+  loginPaciente:   (code: string) => boolean
+  logout:          () => void
+
+  // Patients
+  addPatient:  (p: Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>) => string
+  editPatient: (id: string, patch: Partial<Patient>) => void
+  setStatus:   (id: string, status: PatientStatus) => void
+
+  // Sessions
+  addSession:    (s: Omit<Session, 'id' | 'createdAt' | 'updatedAt'>) => string
+  editSession:   (id: string, patch: Partial<Session>) => void
+  deleteSession: (id: string) => void
+
+  // Documents
+  addDocument:    (d: Omit<PatientDocument, 'id' | 'createdAt'>) => string
+  deleteDocument: (id: string) => void
+  shareDocument:  (id: string, shared: boolean) => void
+
+  // Attachments
+  addAttachment:    (a: Omit<PatientAttachment, 'id' | 'createdAt'>) => string
+  deleteAttachment: (id: string) => void
+
+  // Anamnese
+  upsertAnamnese: (data: Omit<Anamnese, 'updatedAt'>) => void
+
+  // Plano terapêutico
+  upsertPlano: (data: Omit<PlanoTerapeutico, 'updatedAt'>) => void
+
+  // Config
+  editConfig: (patch: Partial<ClinicConfig>) => void
+
+  // Backup
+  importBackup: (data: BackupData) => void
 }
 
 export const usePsicoStore = create<PsicoState>()(
   persist(
     (set, get) => ({
-      auth: { role: null, patientId: null, loggedIn: false },
-      patients:  [],
-      sessions:  [],
-      documents: [],
-      config:    DEFAULT_CONFIG,
+      auth:        { role: null, patientId: null, loggedIn: false },
+      patients:    [],
+      sessions:    [],
+      documents:   [],
+      attachments: [],
+      anamneses:   [],
+      plans:       [],
+      config:      DEFAULT_CONFIG,
 
       // ── Auth ──────────────────────────────────────────────────────────
-      loginPsicologa: (password) => {
-        if (password === (get().config.password ?? 'psico2025')) {
+      loginPsicologa: (password, email) => {
+        const { config } = get()
+        const senhaOk = password === (config.password ?? 'psico2025')
+        const emailOk = !config.email || !email
+          ? true
+          : email.toLowerCase() === config.email.toLowerCase()
+        if (senhaOk && emailOk) {
           set({ auth: { role: 'psicologa', patientId: null, loggedIn: true } })
           return true
         }
@@ -99,11 +124,9 @@ export const usePsicoStore = create<PsicoState>()(
 
       // ── Patients ──────────────────────────────────────────────────────
       addPatient: (p) => {
-        const id = crypto.randomUUID()
+        const id  = crypto.randomUUID()
         const now = new Date().toISOString()
-        set(s => ({
-          patients: [...s.patients, { ...p, id, createdAt: now, updatedAt: now }],
-        }))
+        set(s => ({ patients: [...s.patients, { ...p, id, createdAt: now, updatedAt: now }] }))
         return id
       },
 
@@ -130,9 +153,7 @@ export const usePsicoStore = create<PsicoState>()(
       addSession: (s) => {
         const id  = crypto.randomUUID()
         const now = new Date().toISOString()
-        set(st => ({
-          sessions: [...st.sessions, { ...s, id, createdAt: now, updatedAt: now }],
-        }))
+        set(st => ({ sessions: [...st.sessions, { ...s, id, createdAt: now, updatedAt: now }] }))
         return id
       },
 
@@ -152,22 +173,57 @@ export const usePsicoStore = create<PsicoState>()(
       addDocument: (d) => {
         const id  = crypto.randomUUID()
         const now = new Date().toISOString()
-        set(s => ({
-          documents: [...s.documents, { ...d, id, createdAt: now }],
-        }))
+        set(s => ({ documents: [...s.documents, { ...d, id, createdAt: now }] }))
         return id
       },
-
       deleteDocument: (id) => {
         set(s => ({ documents: s.documents.filter(d => d.id !== id) }))
       },
-
       shareDocument: (id, shared) => {
         set(s => ({
-          documents: s.documents.map(d =>
-            d.id === id ? { ...d, sharedWithPatient: shared } : d
-          ),
+          documents: s.documents.map(d => d.id === id ? { ...d, sharedWithPatient: shared } : d),
         }))
+      },
+
+      // ── Attachments ───────────────────────────────────────────────────
+      addAttachment: (a) => {
+        const id  = crypto.randomUUID()
+        const now = new Date().toISOString()
+        set(s => ({ attachments: [...s.attachments, { ...a, id, createdAt: now }] }))
+        return id
+      },
+      deleteAttachment: (id) => {
+        set(s => ({ attachments: s.attachments.filter(a => a.id !== id) }))
+      },
+
+      // ── Anamnese ──────────────────────────────────────────────────────
+      upsertAnamnese: (data) => {
+        const now = new Date().toISOString()
+        set(s => {
+          const exists = s.anamneses.some(a => a.patientId === data.patientId)
+          return {
+            anamneses: exists
+              ? s.anamneses.map(a =>
+                  a.patientId === data.patientId ? { ...a, ...data, updatedAt: now } : a
+                )
+              : [...s.anamneses, { ...data, updatedAt: now }],
+          }
+        })
+      },
+
+      // ── Plano ─────────────────────────────────────────────────────────
+      upsertPlano: (data) => {
+        const now = new Date().toISOString()
+        set(s => {
+          const exists = s.plans.some(p => p.patientId === data.patientId)
+          return {
+            plans: exists
+              ? s.plans.map(p =>
+                  p.patientId === data.patientId ? { ...p, ...data, updatedAt: now } : p
+                )
+              : [...s.plans, { ...data, updatedAt: now }],
+          }
+        })
       },
 
       // ── Config ────────────────────────────────────────────────────────
@@ -175,14 +231,17 @@ export const usePsicoStore = create<PsicoState>()(
         set(s => ({ config: { ...s.config, ...patch } }))
       },
 
-      // ── Backup / restore ──────────────────────────────────────────────
+      // ── Backup ────────────────────────────────────────────────────────
       importBackup: (data) => {
         set({
-          patients:  data.patients  ?? [],
-          sessions:  data.sessions  ?? [],
-          documents: data.documents ?? [],
-          config:    { ...DEFAULT_CONFIG, ...data.config },
-          auth:      { role: null, patientId: null, loggedIn: false },
+          patients:    data.patients    ?? [],
+          sessions:    data.sessions    ?? [],
+          documents:   data.documents   ?? [],
+          attachments: data.attachments ?? [],
+          anamneses:   data.anamneses   ?? [],
+          plans:       data.plans       ?? [],
+          config:      { ...DEFAULT_CONFIG, ...data.config },
+          auth:        { role: null, patientId: null, loggedIn: false },
         })
       },
     }),

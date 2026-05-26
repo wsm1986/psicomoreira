@@ -11,6 +11,7 @@ const schema = z.object({
   clinicName:       z.string().min(2, 'Nome obrigatório'),
   psychologistName: z.string().min(2, 'Nome obrigatório'),
   crp:              z.string().optional(),
+  email:            z.string().email('E-mail inválido').or(z.literal('')).optional(),
   phone:            z.string().optional(),
   address:          z.string().optional(),
   sessionDuration:  z.coerce.number().min(15).max(180),
@@ -36,6 +37,9 @@ export function SettingsPage() {
   const patients     = usePsicoStore(s => s.patients)
   const sessions     = usePsicoStore(s => s.sessions)
   const documents    = usePsicoStore(s => s.documents)
+  const attachments  = usePsicoStore(s => s.attachments)
+  const anamneses    = usePsicoStore(s => s.anamneses)
+  const plans        = usePsicoStore(s => s.plans)
   const editConfig   = usePsicoStore(s => s.editConfig)
   const importBackup = usePsicoStore(s => s.importBackup)
 
@@ -47,11 +51,14 @@ export function SettingsPage() {
   // ── Export JSON ────────────────────────────────────────────────────────────
   function handleExport() {
     const data: BackupData = {
-      version:    '1.0',
-      exportedAt: new Date().toISOString(),
+      version:     '1.1',
+      exportedAt:  new Date().toISOString(),
       patients,
       sessions,
       documents,
+      attachments,
+      anamneses,
+      plans,
       config,
     }
     const json = JSON.stringify(data, null, 2)
@@ -92,6 +99,7 @@ export function SettingsPage() {
       clinicName:       config.clinicName,
       psychologistName: config.psychologistName,
       crp:              config.crp,
+      email:            config.email ?? '',
       phone:            config.phone,
       address:          config.address ?? '',
       sessionDuration:  config.sessionDuration,
@@ -108,6 +116,7 @@ export function SettingsPage() {
       clinicName:       config.clinicName,
       psychologistName: config.psychologistName,
       crp:              config.crp,
+      email:            config.email ?? '',
       phone:            config.phone,
       address:          config.address ?? '',
       sessionDuration:  config.sessionDuration,
@@ -132,6 +141,7 @@ export function SettingsPage() {
       clinicName:       data.clinicName,
       psychologistName: data.psychologistName,
       crp:              data.crp ?? '',
+      email:            data.email || undefined,
       phone:            data.phone ?? '',
       address:          data.address || undefined,
       sessionDuration:  data.sessionDuration,
@@ -174,6 +184,14 @@ export function SettingsPage() {
             <div className={styles.field}>
               <label className={styles.label}>CRP</label>
               <input {...register('crp')} placeholder="06/12345"/>
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>E-mail de acesso (opcional)</label>
+              <input {...register('email')} type="email" placeholder="seu@email.com"
+                className={errors.email ? styles.inputError : ''}/>
+              {errors.email && <span className={styles.errMsg}>{errors.email.message}</span>}
+              <span className={styles.hint}>Se preenchido, será exigido no login junto com a senha</span>
             </div>
 
             <div className={styles.field}>

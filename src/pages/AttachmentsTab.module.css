@@ -1,0 +1,175 @@
+.page {
+  padding: 0 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Warning strip ────────────────────────────────────────────────────────── */
+.warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #7a5c00;
+}
+
+/* ── Drop zone ────────────────────────────────────────────────────────────── */
+.dropzone {
+  border: 2px dashed var(--border, #d4ccc6);
+  border-radius: 12px;
+  padding: 36px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: var(--surface, #faf8f5);
+  text-align: center;
+}
+
+.dropzone:hover,
+.dropzoneDragging {
+  border-color: var(--accent, #c4906e);
+  background: rgba(196, 144, 110, 0.05);
+}
+
+.dropIcon {
+  color: var(--accent, #c4906e);
+  opacity: 0.7;
+}
+
+.dropText {
+  font-size: 14px;
+  color: var(--text, #1e1a18);
+  margin: 0;
+}
+
+.dropLink {
+  color: var(--accent, #c4906e);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.dropHint {
+  font-size: 12px;
+  color: var(--text-muted, #9e8e85);
+  margin: 0;
+}
+
+/* ── Error ────────────────────────────────────────────────────────────────── */
+.error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff0f0;
+  border: 1px solid #ffb3b3;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #9c1c1c;
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  color: var(--text-muted, #9e8e85);
+  font-size: 14px;
+  padding: 24px 0;
+  margin: 0;
+}
+
+/* ── File list ────────────────────────────────────────────────────────────── */
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid var(--border, #e8e2dc);
+  border-radius: 10px;
+  padding: 12px 14px;
+  transition: border-color 0.15s;
+}
+
+.fileRow:hover {
+  border-color: var(--accent, #c4906e);
+}
+
+.fileIcon {
+  color: var(--accent, #c4906e);
+  flex-shrink: 0;
+}
+
+.fileMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fileName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text, #1e1a18);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileInfo {
+  font-size: 12px;
+  color: var(--text-muted, #9e8e85);
+}
+
+.fileActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── Icon buttons ─────────────────────────────────────────────────────────── */
+.btnIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border, #e8e2dc);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted, #9e8e85);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.btnIcon:hover {
+  background: var(--surface, #f5f2ee);
+  color: var(--text, #1e1a18);
+  border-color: #c4b8b0;
+}
+
+.btnDanger:hover {
+  background: #fff0f0;
+  color: #c0392b;
+  border-color: #ffb3b3;
+}
+
+/* ── Total info ───────────────────────────────────────────────────────────── */
+.totalInfo {
+  font-size: 12px;
+  color: var(--text-muted, #9e8e85);
+  text-align: right;
+  margin: 4px 0 0;
+}

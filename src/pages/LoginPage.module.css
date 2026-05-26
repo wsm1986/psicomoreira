@@ -122,6 +122,19 @@
 .inputWrap { position: relative; }
 .inputWrap input { padding-right: 42px; }
 
+/* Email icon input */
+.inputIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9c8880;
+  pointer-events: none;
+}
+.inputWithIcon {
+  padding-left: 36px !important;
+}
+
 .eyeBtn {
   position: absolute;
   right: 12px; top: 50%;

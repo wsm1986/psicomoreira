@@ -1,0 +1,119 @@
+.page {
+  padding: 0 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Autosave bar ─────────────────────────────────────────────────────────── */
+.autosaveBar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted, #9e8e85);
+  padding: 6px 10px;
+  background: var(--surface, #f5f2ee);
+  border-radius: 6px;
+  width: fit-content;
+}
+
+/* ── Section card ─────────────────────────────────────────────────────────── */
+.section {
+  background: #fff;
+  border: 1px solid var(--border, #e8e2dc);
+  border-radius: 12px;
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionTitle {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text, #1e1a18);
+  margin: 0 0 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border, #e8e2dc);
+}
+
+/* ── Grid layouts ─────────────────────────────────────────────────────────── */
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.fieldFull {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Label ────────────────────────────────────────────────────────────────── */
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, #9e8e85);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Textarea ─────────────────────────────────────────────────────────────── */
+.page textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #e8e2dc);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text, #1e1a18);
+  background: var(--surface, #faf8f5);
+  resize: vertical;
+  line-height: 1.55;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.page textarea::placeholder {
+  color: #c4b8b0;
+  font-size: 13px;
+}
+
+.page textarea:focus {
+  outline: none;
+  border-color: var(--accent, #c4906e);
+  box-shadow: 0 0 0 3px rgba(196, 144, 110, 0.12);
+  background: #fff;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .grid3 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 16px;
+  }
+  .grid2,
+  .grid3 {
+    grid-template-columns: 1fr;
+  }
+}

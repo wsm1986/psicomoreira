@@ -21,13 +21,16 @@ const schema = z.object({
   paid:          z.boolean(),
   paymentMethod: z.enum(['pix', 'dinheiro', 'cartao', 'boleto', 'plano']).optional(),
   // Clinical notes
-  demands:       z.string().optional(),
-  mood:          z.string().optional(),
-  interventions: z.string().optional(),
-  clinicalNotes: z.string().optional(),
-  nextGoals:     z.string().optional(),
-  evolution:     z.string().optional(),
-  cancelReason:  z.string().optional(),
+  demands:          z.string().optional(),
+  descricaoDemanda: z.string().optional(),
+  resumoSessao:     z.string().optional(),
+  mood:             z.string().optional(),
+  interventions:    z.string().optional(),
+  clinicalNotes:    z.string().optional(),
+  nextGoals:        z.string().optional(),
+  evolution:        z.string().optional(),
+  observacoes:      z.string().optional(),
+  cancelReason:     z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -64,13 +67,16 @@ export function SessionForm() {
           value:         existing.value,
           paid:          existing.paid,
           paymentMethod: existing.paymentMethod,
-          demands:       existing.demands ?? '',
-          mood:          existing.mood ?? '',
-          interventions: existing.interventions ?? '',
-          clinicalNotes: existing.clinicalNotes ?? '',
-          nextGoals:     existing.nextGoals ?? '',
-          evolution:     existing.evolution ?? '',
-          cancelReason:  existing.cancelReason ?? '',
+          demands:          existing.demands ?? '',
+          descricaoDemanda: existing.descricaoDemanda ?? '',
+          resumoSessao:     existing.resumoSessao ?? '',
+          mood:             existing.mood ?? '',
+          interventions:    existing.interventions ?? '',
+          clinicalNotes:    existing.clinicalNotes ?? '',
+          nextGoals:        existing.nextGoals ?? '',
+          evolution:        existing.evolution ?? '',
+          observacoes:      existing.observacoes ?? '',
+          cancelReason:     existing.cancelReason ?? '',
         }
       : {
           patientId:  prePatient,
@@ -91,44 +97,50 @@ export function SessionForm() {
   // Re-fill if navigating to edit different session
   useEffect(() => {
     if (existing) reset({
-      patientId:     existing.patientId,
-      date:          existing.date,
-      time:          existing.time,
-      duration:      existing.duration,
-      status:        existing.status,
-      modality:      existing.modality,
-      value:         existing.value,
-      paid:          existing.paid,
-      paymentMethod: existing.paymentMethod,
-      demands:       existing.demands ?? '',
-      mood:          existing.mood ?? '',
-      interventions: existing.interventions ?? '',
-      clinicalNotes: existing.clinicalNotes ?? '',
-      nextGoals:     existing.nextGoals ?? '',
-      evolution:     existing.evolution ?? '',
-      cancelReason:  existing.cancelReason ?? '',
+      patientId:        existing.patientId,
+      date:             existing.date,
+      time:             existing.time,
+      duration:         existing.duration,
+      status:           existing.status,
+      modality:         existing.modality,
+      value:            existing.value,
+      paid:             existing.paid,
+      paymentMethod:    existing.paymentMethod,
+      demands:          existing.demands ?? '',
+      descricaoDemanda: existing.descricaoDemanda ?? '',
+      resumoSessao:     existing.resumoSessao ?? '',
+      mood:             existing.mood ?? '',
+      interventions:    existing.interventions ?? '',
+      clinicalNotes:    existing.clinicalNotes ?? '',
+      nextGoals:        existing.nextGoals ?? '',
+      evolution:        existing.evolution ?? '',
+      observacoes:      existing.observacoes ?? '',
+      cancelReason:     existing.cancelReason ?? '',
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   function onSubmit(data: FormData) {
     const payload = {
-      patientId:     data.patientId,
-      date:          data.date,
-      time:          data.time,
-      duration:      data.duration,
-      status:        data.status,
-      modality:      data.modality,
-      value:         data.value,
-      paid:          data.paid,
-      paymentMethod: data.paymentMethod,
-      demands:       data.demands || undefined,
-      mood:          data.mood || undefined,
-      interventions: data.interventions || undefined,
-      clinicalNotes: data.clinicalNotes || undefined,
-      nextGoals:     data.nextGoals || undefined,
-      evolution:     data.evolution || undefined,
-      cancelReason:  data.cancelReason || undefined,
+      patientId:        data.patientId,
+      date:             data.date,
+      time:             data.time,
+      duration:         data.duration,
+      status:           data.status,
+      modality:         data.modality,
+      value:            data.value,
+      paid:             data.paid,
+      paymentMethod:    data.paymentMethod,
+      demands:          data.demands || undefined,
+      descricaoDemanda: data.descricaoDemanda || undefined,
+      resumoSessao:     data.resumoSessao || undefined,
+      mood:             data.mood || undefined,
+      interventions:    data.interventions || undefined,
+      clinicalNotes:    data.clinicalNotes || undefined,
+      nextGoals:        data.nextGoals || undefined,
+      evolution:        data.evolution || undefined,
+      observacoes:      data.observacoes || undefined,
+      cancelReason:     data.cancelReason || undefined,
     }
 
     if (isEdit && id) {
@@ -272,8 +284,13 @@ export function SessionForm() {
             <div className={styles.gridFull}>
 
               <div className={styles.field}>
-                <label className={styles.label}>Demanda / Queixa apresentada</label>
-                <textarea {...register('demands')} placeholder="O que a paciente trouxe nesta sessão..."/>
+                <label className={styles.label}>Queixa principal do dia</label>
+                <textarea {...register('demands')} rows={2} placeholder="O que a paciente trouxe nesta sessão..."/>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Descrição detalhada da demanda</label>
+                <textarea {...register('descricaoDemanda')} rows={3} placeholder="Descrição ampliada da demanda apresentada, contexto e detalhes relevantes..."/>
               </div>
 
               <div className={styles.field}>
@@ -282,13 +299,13 @@ export function SessionForm() {
               </div>
 
               <div className={styles.field}>
-                <label className={styles.label}>Intervenções realizadas</label>
-                <textarea {...register('interventions')} placeholder="Técnicas e abordagens utilizadas..."/>
+                <label className={styles.label}>Resumo da sessão</label>
+                <textarea {...register('resumoSessao')} rows={4} placeholder="Síntese do que foi trabalhado na sessão, principais temas e insights..."/>
               </div>
 
               <div className={styles.field}>
-                <label className={styles.label}>Notas clínicas</label>
-                <textarea {...register('clinicalNotes')} rows={4} placeholder="Observações clínicas, hipóteses, reflexões..."/>
+                <label className={styles.label}>Intervenções realizadas</label>
+                <textarea {...register('interventions')} rows={3} placeholder="Técnicas e abordagens utilizadas..."/>
               </div>
 
               <div className={styles.field}>
@@ -297,8 +314,18 @@ export function SessionForm() {
               </div>
 
               <div className={styles.field}>
+                <label className={styles.label}>Notas clínicas</label>
+                <textarea {...register('clinicalNotes')} rows={3} placeholder="Observações clínicas, hipóteses, reflexões..."/>
+              </div>
+
+              <div className={styles.field}>
                 <label className={styles.label}>Objetivos para próxima sessão</label>
                 <textarea {...register('nextGoals')} rows={2} placeholder="Focos e planos para a próxima sessão..."/>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Observações gerais</label>
+                <textarea {...register('observacoes')} rows={2} placeholder="Outras observações relevantes sobre esta sessão..."/>
               </div>
 
             </div>

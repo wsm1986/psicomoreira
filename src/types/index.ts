@@ -1,8 +1,8 @@
 // ── Core types ─────────────────────────────────────────────────────────────
 
-export type PatientStatus = 'ativo' | 'encerrado' | 'pausado'
-export type SessionStatus = 'agendada' | 'realizada' | 'falta' | 'cancelada' | 'remarcada'
-export type SessionModality = 'presencial' | 'online'
+export type PatientStatus  = 'ativo' | 'encerrado' | 'pausado'
+export type SessionStatus  = 'agendada' | 'realizada' | 'falta' | 'cancelada' | 'remarcada'
+export type SessionModality= 'presencial' | 'online'
 export type PaymentMethod  = 'pix' | 'dinheiro' | 'cartao' | 'boleto' | 'plano'
 export type DocumentType   = 'laudo' | 'atestado' | 'encaminhamento' | 'contrato' | 'outro'
 export type UserRole       = 'psicologa' | 'paciente'
@@ -24,7 +24,6 @@ export interface Patient {
   startDate:         string
   endDate?:          string
   notes?:            string
-  /** Login code for patient portal */
   accessCode?:       string
   avatar?:           string
   createdAt:         string
@@ -35,19 +34,22 @@ export interface Patient {
 export interface Session {
   id:               string
   patientId:        string
-  date:             string      // YYYY-MM-DD
-  time:             string      // HH:mm
-  duration:         number      // minutes
+  date:             string
+  time:             string
+  duration:         number
   sessionNumber?:   number
   status:           SessionStatus
   modality:         SessionModality
-  // Clinical notes (psychologist only)
-  demands?:         string
+  // Clinical notes
+  demands?:         string   // queixa principal do dia
+  descricaoDemanda?:string   // descrição detalhada da demanda (NEW)
+  resumoSessao?:    string   // resumo da sessão (NEW)
   mood?:            string
   interventions?:   string
   clinicalNotes?:   string
   nextGoals?:       string
   evolution?:       string
+  observacoes?:     string   // observações gerais (NEW)
   // Financial
   value:            number
   paid:             boolean
@@ -60,13 +62,53 @@ export interface Session {
   updatedAt:        string
 }
 
+// ── Anamnese estruturada ───────────────────────────────────────────────────
+export interface Anamnese {
+  patientId:                    string
+  queixaPrincipal?:             string
+  historiaQueixa?:              string
+  historicoFamiliar?:           string
+  desenvolvimentoInfancia?:     string
+  desenvolvimentoAdolescencia?: string
+  desenvolvimentoAdulto?:       string
+  relacionamentoInterpessoal?:  string
+  historicoEscolarProfissional?:string
+  aspectosEmocionais?:          string
+  informacoesClinicas?:         string
+  hipotesesDiagnosticas?:       string
+  cid10?:                       string
+  updatedAt:                    string
+}
+
+// ── Plano terapêutico ──────────────────────────────────────────────────────
+export interface PlanoTerapeutico {
+  patientId:             string
+  objetivos?:            string
+  estrategias?:          string
+  direcionamentos?:      string
+  planosPaciente?:       string
+  modalidadeTratamento?: string
+  frequenciaSessoes?:    string
+  updatedAt:             string
+}
+
+// ── Anexos ─────────────────────────────────────────────────────────────────
+export interface PatientAttachment {
+  id:        string
+  patientId: string
+  name:      string
+  size:      number
+  mimeType:  string
+  dataUrl:   string
+  createdAt: string
+}
+
 // ── Document ───────────────────────────────────────────────────────────────
 export interface PatientDocument {
   id:                 string
   patientId:          string
   name:               string
   type:               DocumentType
-  /** base64 data URL or future remote URL */
   dataUrl?:           string
   sharedWithPatient:  boolean
   createdAt:          string
@@ -77,21 +119,21 @@ export interface ClinicConfig {
   clinicName:        string
   psychologistName:  string
   crp:               string
+  email?:            string
   phone:             string
   address?:          string
-  sessionDuration:   number   // default minutes
-  sessionValue:      number   // default R$
-  workingDays:       number[] // 0=Sun..6=Sat
-  workingStart:      string   // "08:00"
-  workingEnd:        string   // "18:00"
+  sessionDuration:   number
+  sessionValue:      number
+  workingDays:       number[]
+  workingStart:      string
+  workingEnd:        string
   lgpdText?:         string
-  /** Login password for psychologist */
   password?:         string
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 export interface AuthState {
   role:      UserRole | null
-  patientId: string | null     // set when role = 'paciente'
+  patientId: string | null
   loggedIn:  boolean
 }
