@@ -125,6 +125,66 @@
 .eyeBtn:hover { color: var(--text2); }
 .hint { font-size: 11px; color: var(--text3); }
 
+/* ── Auto-backup / snapshots ─────────────────────────────────────────────── */
+.reminderRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.reminderLabel { font-size: 13px; color: var(--text2); }
+.reminderBtns { display: flex; gap: 6px; }
+.reminderBtn {
+  padding: 5px 12px; border-radius: 7px;
+  border: 1px solid var(--border2); background: #fff;
+  font-size: 12px; font-weight: 500; color: var(--text2);
+  cursor: pointer; transition: all 0.15s;
+}
+.reminderBtn:hover { border-color: var(--accent); color: var(--accent); }
+.reminderBtnActive {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: var(--accent); color: var(--accent); font-weight: 700;
+}
+.lastBackupInfo { font-size: 12px; color: var(--text3); }
+
+.snapshotEmpty { font-size: 13px; color: var(--text3); padding: 8px 0; }
+.snapshotList { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.snapshotRow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; background: #fff;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.snapshotRow:last-child { border-bottom: none; }
+.snapshotInfo { flex: 1; min-width: 0; }
+.snapshotDate { font-size: 13px; font-weight: 500; color: var(--text); display: block; }
+.snapshotLatest { font-size: 11px; color: var(--green); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.snapshotMeta { font-size: 12px; color: var(--text3); display: block; margin-top: 2px; }
+.btnRestore {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 7px;
+  border: 1px solid var(--border2); background: #fff;
+  font-size: 12px; font-weight: 500; color: var(--text2);
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+}
+.btnRestore:hover { border-color: var(--accent); color: var(--accent); }
+.snapshotConfirm {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text2); flex-wrap: wrap;
+}
+.btnConfirmRestore {
+  padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  background: color-mix(in srgb, var(--amber) 15%, transparent);
+  color: var(--amber); cursor: pointer; transition: background 0.15s;
+}
+.btnConfirmRestore:hover { background: color-mix(in srgb, var(--amber) 25%, transparent); }
+.btnCancelRestore {
+  padding: 4px 10px; border-radius: 6px; font-size: 12px;
+  color: var(--text3); cursor: pointer; transition: background 0.15s;
+}
+.btnCancelRestore:hover { background: var(--bg3); }
+
 @media (max-width: 500px) {
   .grid { grid-template-columns: 1fr; }
 }

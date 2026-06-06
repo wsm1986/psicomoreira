@@ -2,9 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { format } from 'date-fns'
-import { Save, User, Clock, DollarSign, Shield, Eye, EyeOff, Download, Upload, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { format, parseISO, formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { Save, User, Clock, DollarSign, Shield, Eye, EyeOff, Download, Upload, AlertTriangle, CheckCircle2, History, RefreshCw } from 'lucide-react'
 import { usePsicoStore, type BackupData } from '../store/store'
+import {
+  getSnapshots, getBackupMeta, setBackupMeta,
+  markFileBackupDone, type Snapshot,
+} from '../utils/autoBackup'
 import styles from './SettingsPage.module.css'
 
 const schema = z.object({
@@ -43,9 +48,12 @@ export function SettingsPage() {
   const editConfig   = usePsicoStore(s => s.editConfig)
   const importBackup = usePsicoStore(s => s.importBackup)
 
-  const [showPwd,      setShowPwd]      = useState(false)
-  const [importStatus, setImportStatus] = useState<'idle' | 'ok' | 'error'>('idle')
-  const [importMsg,    setImportMsg]    = useState('')
+  const [showPwd,        setShowPwd]        = useState(false)
+  const [importStatus,   setImportStatus]   = useState<'idle' | 'ok' | 'error'>('idle')
+  const [importMsg,      setImportMsg]      = useState('')
+  const [snapshots,      setSnapshots]      = useState<Snapshot[]>(() => getSnapshots())
+  const [backupMeta,     setLocalBackupMeta]= useState(getBackupMeta)
+  const [restoreConfirm, setRestoreConfirm] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // ── Export JSON ────────────────────────────────────────────────────────────
@@ -69,6 +77,30 @@ export function SettingsPage() {
     a.download = `psicomoreira-backup-${format(new Date(), 'yyyy-MM-dd')}.json`
     a.click()
     URL.revokeObjectURL(url)
+    markFileBackupDone()
+    setLocalBackupMeta(getBackupMeta())
+  }
+
+  // ── Restaurar snapshot ────────────────────────────────────────────────────
+  function handleRestoreSnapshot(snap: Snapshot) {
+    try {
+      const data = JSON.parse(snap.data) as BackupData
+      if (!data.patients || !data.sessions) throw new Error()
+      importBackup(data)
+      setRestoreConfirm(null)
+      setImportStatus('ok')
+      setImportMsg(`✓ Restaurado: snapshot de ${format(parseISO(snap.savedAt), "d/MM/yyyy 'às' HH:mm", { locale: ptBR })}`)
+    } catch {
+      setImportStatus('error')
+      setImportMsg('Snapshot corrompido. Não foi possível restaurar.')
+    }
+    setRestoreConfirm(null)
+  }
+
+  // ── Frequência do lembrete ────────────────────────────────────────────────
+  function handleReminderDays(days: number) {
+    setBackupMeta({ reminderDays: days })
+    setLocalBackupMeta(getBackupMeta())
   }
 
   // ── Import JSON ────────────────────────────────────────────────────────────
@@ -322,6 +354,88 @@ export function SettingsPage() {
             <p className={styles.importNote}>
               ⚠️ Dados importados com sucesso. Por segurança, faça login novamente.
             </p>
+          )}
+        </section>
+
+        {/* ── Auto-backup ──────────────────────────────────────────────── */}
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}><History size={15}/> Backup automático</h2>
+          <p className={styles.sectionDesc}>
+            O sistema salva automaticamente uma cópia dos dados no seu navegador toda vez que você abre o app.
+            Essas cópias permitem restaurar uma versão anterior sem precisar de um arquivo externo.
+          </p>
+
+          {/* Frequência do lembrete de arquivo */}
+          <div className={styles.reminderRow}>
+            <span className={styles.reminderLabel}>Lembrar de exportar arquivo a cada:</span>
+            <div className={styles.reminderBtns}>
+              {([7, 14, 30] as const).map(d => (
+                <button
+                  key={d}
+                  type="button"
+                  className={`${styles.reminderBtn} ${backupMeta.reminderDays === d ? styles.reminderBtnActive : ''}`}
+                  onClick={() => handleReminderDays(d)}
+                >
+                  {d === 7 ? '7 dias' : d === 14 ? '14 dias' : '30 dias'}
+                </button>
+              ))}
+            </div>
+            {backupMeta.lastFileBackupAt && (
+              <span className={styles.lastBackupInfo}>
+                Último arquivo: {formatDistanceToNow(parseISO(backupMeta.lastFileBackupAt), { locale: ptBR, addSuffix: true })}
+              </span>
+            )}
+          </div>
+
+          {/* Lista de snapshots */}
+          {snapshots.length === 0 ? (
+            <p className={styles.snapshotEmpty}>
+              Nenhum snapshot automático ainda. Abra o app com dados cadastrados para gerar o primeiro.
+            </p>
+          ) : (
+            <div className={styles.snapshotList}>
+              {snapshots.map((snap, idx) => (
+                <div key={snap.id} className={styles.snapshotRow}>
+                  <div className={styles.snapshotInfo}>
+                    <span className={styles.snapshotDate}>
+                      {format(parseISO(snap.savedAt), "d 'de' MMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                      {idx === 0 && <span className={styles.snapshotLatest}> · mais recente</span>}
+                    </span>
+                    <span className={styles.snapshotMeta}>
+                      {snap.patientsCount} paciente{snap.patientsCount !== 1 ? 's' : ''} · {snap.sessionsCount} sessão{snap.sessionsCount !== 1 ? 'ões' : ''}
+                      {!snap.hasAttachments && snap.patientsCount > 0 && ' · sem anexos'}
+                    </span>
+                  </div>
+                  {restoreConfirm === snap.id ? (
+                    <div className={styles.snapshotConfirm}>
+                      <span>Restaurar e substituir dados atuais?</span>
+                      <button
+                        type="button"
+                        className={styles.btnConfirmRestore}
+                        onClick={() => handleRestoreSnapshot(snap)}
+                      >
+                        Confirmar
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.btnCancelRestore}
+                        onClick={() => setRestoreConfirm(null)}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.btnRestore}
+                      onClick={() => setRestoreConfirm(snap.id)}
+                    >
+                      <RefreshCw size={13}/> Restaurar
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </section>
 

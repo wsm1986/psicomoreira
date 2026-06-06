@@ -1,18 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, CalendarDays, Wallet,
   Settings, LogOut, Heart, ChevronLeft, ChevronRight,
   Menu, X, HelpCircle, FileText,
 } from 'lucide-react'
-import { usePsicoStore } from '../store/store'
+import { usePsicoStore, type BackupData } from '../store/store'
+import { saveSnapshot, isReminderDue } from '../utils/autoBackup'
+import { BackupReminder } from './BackupReminder'
 import styles from './Layout.module.css'
 
 const NAV_MAIN = [
-  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard'    },
-  { to: '/admin/pacientes', icon: Users,            label: 'Pacientes'    },
-  { to: '/admin/agenda',    icon: CalendarDays,     label: 'Agenda'       },
-  { to: '/admin/sessoes/nova', icon: FileText,      label: 'Nova sessão'  },
+  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard'   },
+  { to: '/admin/pacientes', icon: Users,            label: 'Pacientes'   },
+  { to: '/admin/agenda',    icon: CalendarDays,     label: 'Agenda'      },
+  { to: '/admin/sessoes/nova', icon: FileText,      label: 'Nova sessão' },
 ]
 const NAV_BOTTOM = [
   { to: '/admin/financeiro',    icon: Wallet,      label: 'Financeiro'    },
@@ -21,12 +23,47 @@ const NAV_BOTTOM = [
 ]
 
 export function Layout() {
-  const navigate  = useNavigate()
-  const logout    = usePsicoStore(s => s.logout)
-  const config    = usePsicoStore(s => s.config)
+  const navigate = useNavigate()
+  const logout   = usePsicoStore(s => s.logout)
+  const config   = usePsicoStore(s => s.config)
 
-  const [collapsed,  setCollapsed]  = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  // Dados para snapshot/backup
+  const patients    = usePsicoStore(s => s.patients)
+  const sessions    = usePsicoStore(s => s.sessions)
+  const documents   = usePsicoStore(s => s.documents)
+  const attachments = usePsicoStore(s => s.attachments)
+  const anamneses   = usePsicoStore(s => s.anamneses)
+  const plans       = usePsicoStore(s => s.plans)
+
+  const [collapsed,    setCollapsed]    = useState(false)
+  const [mobileOpen,   setMobileOpen]   = useState(false)
+  const [showReminder, setShowReminder] = useState(false)
+
+  // ── Auto-snapshot ao abrir o app ──────────────────────────────────────────
+  useEffect(() => {
+    // Só salva se houver dados reais
+    if (patients.length === 0 && sessions.length === 0) return
+
+    const data: BackupData = {
+      version:    '1.1',
+      exportedAt: new Date().toISOString(),
+      patients, sessions, documents, attachments, anamneses, plans, config,
+    }
+    saveSnapshot(data)
+
+    // Verifica se lembrete de backup de arquivo é necessário
+    setShowReminder(isReminderDue())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])   // só no mount
+
+  // ── Constrói objeto de backup para o banner ───────────────────────────────
+  function buildBackup(): BackupData {
+    return {
+      version:    '1.1',
+      exportedAt: new Date().toISOString(),
+      patients, sessions, documents, attachments, anamneses, plans, config,
+    }
+  }
 
   function handleLogout() {
     logout()
@@ -117,6 +154,10 @@ export function Layout() {
         </header>
 
         <main className={styles.content}>
+          {/* Banner de lembrete de backup */}
+          {showReminder && (
+            <BackupReminder buildBackup={buildBackup}/>
+          )}
           <Outlet/>
         </main>
       </div>
