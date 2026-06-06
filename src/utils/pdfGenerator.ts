@@ -36,7 +36,7 @@ function addHeader(doc: jsPDF, config: ClinicConfig, title: string): number {
   // CRP / title right
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  const rightText = config.crp ? `CRP ${config.crp}` : ''
+  const rightText = config.crp ? `Psicóloga – CRP ${config.crp}` : 'Psicóloga'
   doc.text(rightText, 210 - MARGIN - doc.getTextWidth(rightText), 13)
 
   // Document title
@@ -75,9 +75,10 @@ function addFooter(doc: jsPDF, config: ClinicConfig) {
     doc.setFont('helvetica', 'normal')
     setColor(doc, GRAY)
     doc.text(config.psychologistName, MARGIN, 283)
-    if (config.crp) {
-      doc.text(`CRP ${config.crp}`, MARGIN, 287)
-    }
+    doc.text(
+      config.crp ? `Psicóloga – CRP ${config.crp}` : 'Psicóloga',
+      MARGIN, 287
+    )
 
     // Page number
     const pageStr = `Página ${i} de ${pageCount}`
@@ -278,10 +279,11 @@ export function generateSessionPDF(
   doc.setFontSize(9)
   setColor(doc, DARK)
   doc.text(config.psychologistName, MARGIN, y)
-  if (config.crp) {
-    y += 5
-    doc.text(`CRP ${config.crp}`, MARGIN, y)
-  }
+  y += 5
+  doc.text(
+    config.crp ? `Psicóloga – CRP ${config.crp}` : 'Psicóloga',
+    MARGIN, y
+  )
 
   addFooter(doc, config)
   const safeName = patient.name.replace(/\s+/g, '-').toLowerCase()
@@ -359,10 +361,11 @@ export function generateReferralReport(
   doc.setFontSize(9)
   setColor(doc, DARK)
   doc.text(config.psychologistName, MARGIN, y)
-  if (config.crp) {
-    y += 5
-    doc.text(`CRP ${config.crp}`, MARGIN, y)
-  }
+  y += 5
+  doc.text(
+    config.crp ? `Psicóloga – CRP ${config.crp}` : 'Psicóloga',
+    MARGIN, y
+  )
   y += 5
   doc.text(format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: ptBR }), MARGIN, y)
 

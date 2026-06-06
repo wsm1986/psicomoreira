@@ -10,8 +10,8 @@ import type {
 // ── Default config ─────────────────────────────────────────────────────────
 const DEFAULT_CONFIG: ClinicConfig = {
   clinicName:       'PsicoMoreira',
-  psychologistName: 'Dra. Moreira',
-  crp:              '',
+  psychologistName: 'Joselaine Moreira',
+  crp:              '06/195016',
   email:            '',
   phone:            '',
   sessionDuration:  50,
