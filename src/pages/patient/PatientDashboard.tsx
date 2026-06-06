@@ -3,15 +3,24 @@ import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
   CalendarCheck2, CheckCircle2, Clock, Video, MapPin,
-  Heart, FileText,
+  Heart, FileText, Download, File,
 } from 'lucide-react'
 import { usePsicoStore } from '../../store/store'
 import styles from './PatientDashboard.module.css'
+
+const DOC_TYPE_LABEL: Record<string, string> = {
+  laudo:           'Laudo',
+  atestado:        'Atestado',
+  encaminhamento:  'Encaminhamento',
+  contrato:        'Contrato',
+  outro:           'Documento',
+}
 
 export function PatientDashboard() {
   const auth      = usePsicoStore(s => s.auth)
   const patients  = usePsicoStore(s => s.patients)
   const sessions  = usePsicoStore(s => s.sessions)
+  const documents = usePsicoStore(s => s.documents)
   const config    = usePsicoStore(s => s.config)
 
   const patient = patients.find(p => p.id === auth.patientId)
@@ -60,6 +69,14 @@ export function PatientDashboard() {
       .filter(s => s.status === 'realizada' || (s.date <= todayStr && s.status !== 'agendada'))
       .slice(0, 5),
     [patientSessions, todayStr]
+  )
+
+  // ── Documentos compartilhados com a paciente ─────────────────────────────
+  const sharedDocs = useMemo(() =>
+    documents
+      .filter(d => d.patientId === auth.patientId && d.sharedWithPatient)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [documents, auth.patientId]
   )
 
   const firstName = patient?.name.split(' ')[0] ?? 'Paciente'
@@ -182,6 +199,38 @@ export function PatientDashboard() {
           </div>
         )}
       </div>
+
+      {/* Documentos compartilhados */}
+      {sharedDocs.length > 0 && (
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}><File size={14}/> Documentos compartilhados</h2>
+          <div className={styles.docList}>
+            {sharedDocs.map(doc => (
+              <div key={doc.id} className={styles.docRow}>
+                <div className={styles.docIcon}>
+                  <FileText size={15}/>
+                </div>
+                <div className={styles.docInfo}>
+                  <span className={styles.docName}>{doc.name}</span>
+                  <span className={styles.docMeta}>
+                    {DOC_TYPE_LABEL[doc.type] ?? 'Documento'} · {format(parseISO(doc.createdAt), "d 'de' MMM 'de' yyyy", { locale: ptBR })}
+                  </span>
+                </div>
+                {doc.dataUrl && (
+                  <a
+                    href={doc.dataUrl}
+                    download={doc.name}
+                    className={styles.docDownload}
+                    title="Baixar documento"
+                  >
+                    <Download size={14}/>
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Confidentiality note */}
       <div className={styles.privacyNote}>

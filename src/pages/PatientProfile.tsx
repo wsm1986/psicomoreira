@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { format, parseISO, differenceInYears, differenceInMonths } from 'date-fns'
+import { format, parseISO, differenceInYears, differenceInMonths, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
   ArrowLeft, Phone, Mail, Calendar, MapPin, User,
@@ -93,11 +93,15 @@ export function PatientProfile() {
 
   // ── Stats ────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const realizadas = patientSessions.filter(s => s.status === 'realizada')
-    const totalPago  = realizadas.reduce((a, s) => a + (s.paid ? s.value : 0), 0)
-    const totalPend  = realizadas.reduce((a, s) => a + (!s.paid ? s.value : 0), 0)
-    const faltas     = patientSessions.filter(s => s.status === 'falta').length
-    return { total: patientSessions.length, realizadas: realizadas.length, faltas, totalPago, totalPend }
+    const realizadas  = patientSessions.filter(s => s.status === 'realizada')
+    const totalPago   = realizadas.reduce((a, s) => a + (s.paid ? s.value : 0), 0)
+    const totalPend   = realizadas.reduce((a, s) => a + (!s.paid ? s.value : 0), 0)
+    const faltas      = patientSessions.filter(s => s.status === 'falta').length
+    const lastSession = realizadas[realizadas.length - 1]
+    const daysSince   = lastSession
+      ? differenceInDays(new Date(), parseISO(lastSession.date))
+      : null
+    return { total: patientSessions.length, realizadas: realizadas.length, faltas, totalPago, totalPend, daysSince }
   }, [patientSessions])
 
   const anamnese       = anamneses.find(a => a.patientId === id)
@@ -218,6 +222,18 @@ export function PatientProfile() {
         <div className={styles.statItem}>
           <span className={styles.statVal} style={{ color: stats.totalPend > 0 ? 'var(--amber)' : undefined }}>{fmtBRL(stats.totalPend)}</span>
           <span className={styles.statLabel}>Pendente</span>
+        </div>
+        <div className={styles.statItem}>
+          <span className={styles.statVal} style={{
+            color: stats.daysSince === null ? 'var(--text3)'
+              : stats.daysSince > 30 ? 'var(--amber)'
+              : 'var(--text)',
+          }}>
+            {stats.daysSince === null ? '—'
+              : stats.daysSince === 0 ? 'Hoje'
+              : `${stats.daysSince}d`}
+          </span>
+          <span className={styles.statLabel}>Última sessão</span>
         </div>
       </div>
 

@@ -1,11 +1,15 @@
 import { useState, useMemo } from 'react'
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from 'date-fns'
+import {
+  format, parseISO, startOfMonth, endOfMonth,
+  isWithinInterval, subMonths,
+} from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
   TrendingUp, TrendingDown, AlertCircle, CheckCircle2,
-  Clock, ChevronLeft, ChevronRight,
+  Clock, ChevronLeft, ChevronRight, X,
 } from 'lucide-react'
 import { usePsicoStore } from '../store/store'
+import type { PaymentMethod } from '../types'
 import styles from './FinancialPage.module.css'
 
 function fmtBRL(n: number) {
@@ -20,18 +24,71 @@ const METHOD_LABEL: Record<string, string> = {
   plano:    'Plano/Convênio',
 }
 
+// ── SVG Bar Chart ──────────────────────────────────────────────────────────
+function RevenueChart({ data }: { data: Array<{ label: string; value: number }> }) {
+  const max = Math.max(...data.map(d => d.value), 1)
+  const BAR_W = 42
+  const BAR_GAP = 10
+  const H = 72
+
+  return (
+    <div className={styles.chartWrap}>
+      <svg
+        width={data.length * (BAR_W + BAR_GAP) - BAR_GAP}
+        height={H}
+        style={{ display: 'block' }}
+      >
+        {data.map((d, i) => {
+          const bh = d.value > 0 ? Math.max(4, (d.value / max) * H) : 3
+          const x = i * (BAR_W + BAR_GAP)
+          const y = H - bh
+          const isLast = i === data.length - 1
+          return (
+            <rect
+              key={i}
+              x={x} y={y}
+              width={BAR_W} height={bh}
+              rx={5}
+              fill={isLast
+                ? 'var(--accent)'
+                : 'color-mix(in srgb, var(--accent) 28%, transparent)'}
+            />
+          )
+        })}
+      </svg>
+      <div className={styles.chartLabels}>
+        {data.map((d, i) => (
+          <div key={i} className={styles.chartCol} style={{ width: BAR_W }}>
+            <span className={i === data.length - 1 ? styles.chartValActive : styles.chartVal}>
+              {d.value > 0 ? fmtBRL(d.value) : '—'}
+            </span>
+            <span className={i === data.length - 1 ? styles.chartLabelActive : styles.chartLabel}>
+              {d.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Component ──────────────────────────────────────────────────────────────
 export function FinancialPage() {
-  const patients = usePsicoStore(s => s.patients)
-  const sessions = usePsicoStore(s => s.sessions)
+  const patients    = usePsicoStore(s => s.patients)
+  const sessions    = usePsicoStore(s => s.sessions)
   const editSession = usePsicoStore(s => s.editSession)
 
   const [monthOffset, setMonthOffset] = useState(0)
-  const [activeTab, setActiveTab] = useState<'resumo' | 'pendentes'>('resumo')
+  const [activeTab, setActiveTab]     = useState<'resumo' | 'pendentes'>('resumo')
 
-  const refDate   = subMonths(new Date(), -monthOffset)
-  const mStart    = startOfMonth(refDate)
-  const mEnd      = endOfMonth(refDate)
-  const monthLabel= format(refDate, "MMMM 'de' yyyy", { locale: ptBR })
+  // Inline pay: which session is being confirmed + chosen method
+  const [payingId,     setPayingId]     = useState<string | null>(null)
+  const [payingMethod, setPayingMethod] = useState<PaymentMethod>('pix')
+
+  const refDate    = subMonths(new Date(), -monthOffset)
+  const mStart     = startOfMonth(refDate)
+  const mEnd       = endOfMonth(refDate)
+  const monthLabel = format(refDate, "MMMM 'de' yyyy", { locale: ptBR })
 
   // ── Month sessions ────────────────────────────────────────────────────────
   const monthSessions = useMemo(() =>
@@ -43,11 +100,11 @@ export function FinancialPage() {
   )
 
   const stats = useMemo(() => {
-    const total   = monthSessions.reduce((a, s) => a + s.value, 0)
-    const recebido= monthSessions.reduce((a, s) => a + (s.paid ? s.value : 0), 0)
-    const pendente= monthSessions.reduce((a, s) => a + (!s.paid ? s.value : 0), 0)
-    const sessoes = monthSessions.length
-    const pagas   = monthSessions.filter(s => s.paid).length
+    const total    = monthSessions.reduce((a, s) => a + s.value, 0)
+    const recebido = monthSessions.reduce((a, s) => a + (s.paid ? s.value : 0), 0)
+    const pendente = monthSessions.reduce((a, s) => a + (!s.paid ? s.value : 0), 0)
+    const sessoes  = monthSessions.length
+    const pagas    = monthSessions.filter(s => s.paid).length
     return { total, recebido, pendente, sessoes, pagas }
   }, [monthSessions])
 
@@ -70,6 +127,34 @@ export function FinancialPage() {
     return Object.entries(map).sort((a, b) => b[1] - a[1])
   }, [monthSessions])
 
+  // ── Receita 6 meses ───────────────────────────────────────────────────────
+  const today = new Date()
+  const monthlyRevenue = useMemo(() =>
+    Array.from({ length: 6 }, (_, i) => {
+      const d     = subMonths(today, 5 - i)
+      const start = startOfMonth(d)
+      const end   = endOfMonth(d)
+      const value = sessions
+        .filter(s =>
+          s.status === 'realizada' && s.paid &&
+          isWithinInterval(parseISO(s.date), { start, end })
+        )
+        .reduce((acc, s) => acc + s.value, 0)
+      return { label: format(d, 'MMM', { locale: ptBR }), value }
+    }),
+    [sessions]
+  )
+
+  // ── Ação: confirmar pagamento ─────────────────────────────────────────────
+  function confirmPaid(sessionId: string) {
+    editSession(sessionId, {
+      paid:          true,
+      paymentDate:   format(new Date(), 'yyyy-MM-dd'),
+      paymentMethod: payingMethod,
+    })
+    setPayingId(null)
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
@@ -86,6 +171,16 @@ export function FinancialPage() {
           </div>
         )}
       </div>
+
+      {/* Gráfico 6 meses */}
+      {monthlyRevenue.some(d => d.value > 0) && (
+        <div className={styles.card}>
+          <h3 className={styles.cardTitle}>Receita — últimos 6 meses</h3>
+          <div className={styles.chartScrollArea}>
+            <RevenueChart data={monthlyRevenue}/>
+          </div>
+        </div>
+      )}
 
       {/* Month navigation */}
       <div className={styles.monthNav}>
@@ -123,7 +218,7 @@ export function FinancialPage() {
           color="var(--blue)"
           label="Total faturado"
           value={fmtBRL(stats.total)}
-          sub={`${stats.sessoes} sessão realizadas`}
+          sub={`${stats.sessoes} sessões realizadas`}
         />
       </div>
 
@@ -135,7 +230,7 @@ export function FinancialPage() {
             className={`${styles.tab} ${activeTab === t ? styles.tabActive : ''}`}
             onClick={() => setActiveTab(t)}
           >
-            {t === 'resumo' ? `Resumo do mês` : `Pendentes (${allPending.length})`}
+            {t === 'resumo' ? 'Resumo do mês' : `Pendentes (${allPending.length})`}
           </button>
         ))}
       </div>
@@ -143,7 +238,6 @@ export function FinancialPage() {
       {/* ── Resumo ──────────────────────────────────────────────────────── */}
       {activeTab === 'resumo' && (
         <div className={styles.resumeLayout}>
-          {/* Sessions list */}
           <div className={styles.card}>
             <h3 className={styles.cardTitle}>Sessões realizadas</h3>
             {monthSessions.length === 0 ? (
@@ -172,19 +266,40 @@ export function FinancialPage() {
                           <td>{s.paymentMethod ? METHOD_LABEL[s.paymentMethod] : '—'}</td>
                           <td>
                             <div className={styles.statusCell}>
-                              {s.paid
-                                ? <><CheckCircle2 size={12} style={{color:'var(--green)'}}/> <span style={{color:'var(--green)'}}>Pago</span></>
-                                : <>
-                                    <Clock size={12} style={{color:'var(--amber)'}}/>
-                                    <span style={{color:'var(--amber)'}}>Pendente</span>
-                                    <button
-                                      className={styles.btnMarkPaid}
-                                      onClick={() => editSession(s.id, { paid: true, paymentDate: format(new Date(), 'yyyy-MM-dd') })}
-                                    >
-                                      Marcar pago
-                                    </button>
-                                  </>
-                              }
+                              {s.paid ? (
+                                <><CheckCircle2 size={12} style={{color:'var(--green)'}}/> <span style={{color:'var(--green)'}}>Pago</span></>
+                              ) : payingId === s.id ? (
+                                <div className={styles.payInline}>
+                                  <select
+                                    className={styles.paySelect}
+                                    value={payingMethod}
+                                    onChange={e => setPayingMethod(e.target.value as PaymentMethod)}
+                                  >
+                                    <option value="pix">PIX</option>
+                                    <option value="dinheiro">Dinheiro</option>
+                                    <option value="cartao">Cartão</option>
+                                    <option value="boleto">Boleto</option>
+                                    <option value="plano">Convênio</option>
+                                  </select>
+                                  <button className={styles.btnConfirmPay} onClick={() => confirmPaid(s.id)}>
+                                    <CheckCircle2 size={13}/> Confirmar
+                                  </button>
+                                  <button className={styles.btnCancelPay} onClick={() => setPayingId(null)}>
+                                    <X size={13}/>
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <Clock size={12} style={{color:'var(--amber)'}}/>
+                                  <span style={{color:'var(--amber)'}}>Pendente</span>
+                                  <button
+                                    className={styles.btnMarkPaid}
+                                    onClick={() => { setPayingId(s.id); setPayingMethod('pix') }}
+                                  >
+                                    Marcar pago
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -196,7 +311,6 @@ export function FinancialPage() {
             )}
           </div>
 
-          {/* Method breakdown */}
           {byMethod.length > 0 && (
             <div className={styles.card}>
               <h3 className={styles.cardTitle}>Formas de pagamento</h3>
@@ -245,12 +359,34 @@ export function FinancialPage() {
                     <td>{format(parseISO(s.date), "d/MM/yyyy")}</td>
                     <td>{fmtBRL(s.value)}</td>
                     <td>
-                      <button
-                        className={styles.btnMarkPaid}
-                        onClick={() => editSession(s.id, { paid: true, paymentDate: format(new Date(), 'yyyy-MM-dd') })}
-                      >
-                        <CheckCircle2 size={12}/> Marcar pago
-                      </button>
+                      {payingId === s.id ? (
+                        <div className={styles.payInline}>
+                          <select
+                            className={styles.paySelect}
+                            value={payingMethod}
+                            onChange={e => setPayingMethod(e.target.value as PaymentMethod)}
+                          >
+                            <option value="pix">PIX</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="cartao">Cartão</option>
+                            <option value="boleto">Boleto</option>
+                            <option value="plano">Convênio</option>
+                          </select>
+                          <button className={styles.btnConfirmPay} onClick={() => confirmPaid(s.id)}>
+                            <CheckCircle2 size={13}/> Confirmar
+                          </button>
+                          <button className={styles.btnCancelPay} onClick={() => setPayingId(null)}>
+                            <X size={13}/>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className={styles.btnMarkPaid}
+                          onClick={() => { setPayingId(s.id); setPayingMethod('pix') }}
+                        >
+                          <CheckCircle2 size={12}/> Marcar pago
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -265,11 +401,11 @@ export function FinancialPage() {
 
 // ── KpiCard ────────────────────────────────────────────────────────────────
 function KpiCard({ icon, color, label, value, sub }: {
-  icon: React.ReactNode
+  icon:  React.ReactNode
   color: string
   label: string
   value: string
-  sub: string
+  sub:   string
 }) {
   return (
     <div className={styles.kpiCard}>

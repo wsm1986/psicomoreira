@@ -108,6 +108,41 @@
   padding: 40px 20px; color: var(--text3); font-size: 14px;
 }
 
+/* Revenue chart */
+.chartScrollArea { overflow-x: auto; padding-bottom: 4px; }
+.chartWrap { display: flex; flex-direction: column; gap: 8px; }
+.chartLabels { display: flex; gap: 10px; }
+.chartCol { flex-shrink: 0; display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.chartVal      { font-size: 9px; color: var(--text3); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chartValActive{ font-size: 9px; font-weight: 700; color: var(--accent); text-align: center; white-space: nowrap; }
+.chartLabel      { font-size: 11px; color: var(--text3); text-transform: capitalize; }
+.chartLabelActive{ font-size: 11px; font-weight: 700; color: var(--accent); text-transform: capitalize; }
+
+/* Inline pay confirm */
+.payInline {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.paySelect {
+  padding: 4px 8px; border-radius: 6px;
+  border: 1px solid var(--border2); background: #fff;
+  font-size: 12px; color: var(--text);
+  cursor: pointer; height: 28px;
+}
+.btnConfirmPay {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 6px;
+  background: color-mix(in srgb, var(--green) 12%, transparent);
+  color: var(--green); font-size: 12px; font-weight: 600;
+  transition: background 0.15s; height: 28px;
+}
+.btnConfirmPay:hover { background: color-mix(in srgb, var(--green) 22%, transparent); }
+.btnCancelPay {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 6px;
+  color: var(--text3); transition: background 0.15s;
+}
+.btnCancelPay:hover { background: var(--bg3); color: var(--red); }
+
 /* Responsive */
 @media (max-width: 700px) {
   .kpiRow { grid-template-columns: 1fr; }
