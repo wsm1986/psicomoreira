@@ -51,7 +51,7 @@ export function SettingsPage() {
   const [showPwd,        setShowPwd]        = useState(false)
   const [importStatus,   setImportStatus]   = useState<'idle' | 'ok' | 'error'>('idle')
   const [importMsg,      setImportMsg]      = useState('')
-  const [snapshots,      setSnapshots]      = useState<Snapshot[]>(() => getSnapshots())
+  const [snapshots]      = useState<Snapshot[]>(() => getSnapshots())
   const [backupMeta,     setLocalBackupMeta]= useState(getBackupMeta)
   const [restoreConfirm, setRestoreConfirm] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
