@@ -387,14 +387,111 @@
 }
 .editBtn:hover { background: var(--bg3); color: var(--accent); }
 
+/* ── Session list header ─────────────────────────────────────────────────── */
+.sessionListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sessionListCount {
+  font-size: 12px;
+  color: var(--text3);
+  font-weight: 500;
+}
+.btnPdfSm {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 7px;
+  border: 1px solid var(--border2);
+  background: #fff;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btnPdfSm:hover {
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Notes dot indicator ─────────────────────────────────────────────────── */
+.notesDot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
 /* ── Session body / notes ────────────────────────────────────────────────── */
 .sessionCardBody {
-  padding: 0 18px 16px;
+  padding: 14px 18px 18px;
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
+  gap: 0;
+}
+
+/* ── Body actions bar ────────────────────────────────────────────────────── */
+.sessionBodyActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.btnEditNotes {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--border2);
+  background: #fff;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btnEditNotes:hover {
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btnPdfSession {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--border2);
+  background: #fff;
+  color: var(--text3);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btnPdfSession:hover {
+  background: color-mix(in srgb, var(--accent) 6%, #fff);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Read view ───────────────────────────────────────────────────────────── */
+.notesReadView {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  padding-top: 14px;
 }
 .note { display: flex; flex-direction: column; gap: 4px; }
 .noteLabel {
@@ -414,7 +511,88 @@
   font-size: 13px;
   color: var(--text3);
   font-style: italic;
+  line-height: 1.5;
 }
+
+/* ── Editor (inline form) ────────────────────────────────────────────────── */
+.notesEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 16px;
+}
+.editorField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.editorLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text3);
+}
+.editorTextarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: #fff;
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.6;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+.editorTextarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.editorTextarea::placeholder { color: var(--text3); }
+
+/* ── Editor actions ──────────────────────────────────────────────────────── */
+.editorActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+.btnCancelEdit {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: #fff;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnCancelEdit:hover { background: var(--bg3); }
+.btnSaveNotes {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 18px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #d4a882 0%, #c4906e 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(196,144,110,0.30);
+  transition: opacity 0.15s;
+}
+.btnSaveNotes:hover { opacity: 0.9; }
 
 /* ── PDF buttons ─────────────────────────────────────────────────────────── */
 .pdfGroup {

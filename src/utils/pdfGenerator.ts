@@ -212,6 +212,83 @@ export function generateEvolutionReport(
   doc.save(`relatorio-evolucao-${patient.name.replace(/\s+/g, '-').toLowerCase()}-${format(new Date(), 'yyyy-MM-dd')}.pdf`)
 }
 
+// ── Report: Sessão individual ─────────────────────────────────────────────
+export function generateSessionPDF(
+  patient: Patient,
+  session: Session,
+  sessionNumber: number,
+  config: ClinicConfig
+): void {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  doc.setFont('helvetica', 'normal')
+
+  const dateLabel = format(parseISO(session.date), "d 'de' MMMM 'de' yyyy", { locale: ptBR })
+  let y = addHeader(doc, config, `Registro Clínico — ${dateLabel}`)
+
+  y = patientBlock(doc, patient, y)
+  y += 4
+
+  // Session meta block
+  y = section(doc, 'Dados da Sessão', y)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  setColor(doc, DARK)
+  const meta = [
+    `Data: ${dateLabel}`,
+    `Horário: ${session.time}`,
+    `Duração: ${session.duration} min`,
+    `Modalidade: ${session.modality === 'online' ? 'Online' : 'Presencial'}`,
+    session.status === 'realizada' ? `Sessão nº ${sessionNumber}` : `Status: ${session.status}`,
+  ].join('   ·   ')
+  const metaLines = doc.splitTextToSize(meta, PW)
+  for (const line of metaLines) {
+    doc.text(line, MARGIN, y)
+    y += 5
+  }
+  y += 3
+
+  // Clinical notes
+  y = section(doc, 'Registro Clínico', y)
+  y = field(doc, 'Humor percebido', session.mood, y)
+  y = field(doc, 'Demanda trazida pelo paciente', session.demands, y)
+  y = field(doc, 'Descrição detalhada da demanda', session.descricaoDemanda, y)
+  y = field(doc, 'Resumo da sessão', session.resumoSessao, y)
+  y = field(doc, 'Intervenção realizada', session.interventions, y)
+  y = field(doc, 'Evolução / Observações clínicas', session.evolution, y)
+  y = field(doc, 'Notas clínicas', session.clinicalNotes, y)
+  y = field(doc, 'Encaminhamentos / Combinados para próxima sessão', session.nextGoals, y)
+  y = field(doc, 'Observações gerais', session.observacoes, y)
+
+  if (!session.mood && !session.demands && !session.interventions && !session.evolution && !session.clinicalNotes && !session.nextGoals) {
+    doc.setFontSize(9)
+    setColor(doc, GRAY)
+    doc.text('Nenhuma nota clínica registrada para esta sessão.', MARGIN, y)
+    y += 8
+  }
+
+  // Signature space
+  if (y > 240) { doc.addPage(); y = 30 }
+  else y += 14
+
+  drawColor(doc, DARK)
+  doc.setLineWidth(0.3)
+  doc.line(MARGIN, y, MARGIN + 70, y)
+  y += 5
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
+  setColor(doc, DARK)
+  doc.text(config.psychologistName, MARGIN, y)
+  if (config.crp) {
+    y += 5
+    doc.text(`CRP ${config.crp}`, MARGIN, y)
+  }
+
+  addFooter(doc, config)
+  const safeName = patient.name.replace(/\s+/g, '-').toLowerCase()
+  const safeDate = session.date
+  doc.save(`sessao-${safeName}-${safeDate}.pdf`)
+}
+
 // ── Report: Encaminhamento ─────────────────────────────────────────────────
 export function generateReferralReport(
   patient: Patient,

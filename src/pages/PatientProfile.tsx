@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { format, parseISO, differenceInYears, differenceInMonths } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -6,11 +6,11 @@ import {
   ArrowLeft, Phone, Mail, Calendar, MapPin, User,
   Plus, Edit2, CheckCircle2, XCircle, Clock, Video,
   FileText, ChevronDown, ChevronUp, Banknote, Wifi,
-  CircleDot, AlertTriangle, Download, Paperclip,
+  CircleDot, AlertTriangle, Download, Paperclip, Save, X,
 } from 'lucide-react'
 import { usePsicoStore } from '../store/store'
-import type { PatientStatus, Session } from '../types'
-import { generateEvolutionReport, generateReferralReport } from '../utils/pdfGenerator'
+import type { PatientStatus, Session, Patient, ClinicConfig } from '../types'
+import { generateEvolutionReport, generateReferralReport, generateSessionPDF } from '../utils/pdfGenerator'
 import { AnamneseTab } from './AnamneseTab'
 import { PlanoTab } from './PlanoTab'
 import { AttachmentsTab } from './AttachmentsTab'
@@ -64,18 +64,32 @@ export function PatientProfile() {
   const attachments = usePsicoStore(s => s.attachments)
   const config      = usePsicoStore(s => s.config)
   const setStatus   = usePsicoStore(s => s.setStatus)
+  const editSession = usePsicoStore(s => s.editSession)
 
   const patient = patients.find(p => p.id === id)
   const [activeTab, setActiveTab] = useState<TabId>('resumo')
   const [expandedSession, setExpandedSession] = useState<string | null>(null)
 
-  // ── Patient sessions sorted newest first ─────────────────────────────────
+  // ── Patient sessions sorted oldest → newest (cronológico) ────────────────
   const patientSessions = useMemo(() =>
     sessions
       .filter(s => s.patientId === id)
-      .sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`)),
+      .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)),
     [sessions, id]
   )
+
+  // ── Mapa de número sequencial para sessões realizadas ────────────────────
+  const sessionNumberMap = useMemo(() => {
+    const map: Record<string, number> = {}
+    let num = 0
+    patientSessions.forEach(s => {
+      if (s.status === 'realizada') {
+        num++
+        map[s.id] = num
+      }
+    })
+    return map
+  }, [patientSessions])
 
   // ── Stats ────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -225,7 +239,6 @@ export function PatientProfile() {
         {/* ── Tab: Resumo ───────────────────────────────────────────────── */}
         {activeTab === 'resumo' && (
           <div className={styles.resumeGrid}>
-            {/* Dados pessoais */}
             <div className={styles.card}>
               <h3 className={styles.cardTitle}><User size={14}/> Dados pessoais</h3>
               <div className={styles.dataList}>
@@ -245,7 +258,6 @@ export function PatientProfile() {
               </div>
             </div>
 
-            {/* Quick anamnese peek */}
             {anamnese?.queixaPrincipal && (
               <div className={styles.card}>
                 <h3 className={styles.cardTitle}><FileText size={14}/> Queixa principal</h3>
@@ -265,7 +277,6 @@ export function PatientProfile() {
               </div>
             )}
 
-            {/* Quick plan peek */}
             {plano?.objetivos && (
               <div className={styles.card}>
                 <h3 className={styles.cardTitle}><CheckCircle2 size={14}/> Objetivos terapêuticos</h3>
@@ -285,7 +296,6 @@ export function PatientProfile() {
               </div>
             )}
 
-            {/* Notas gerais */}
             {patient.notes && (
               <div className={styles.card}>
                 <h3 className={styles.cardTitle}><FileText size={14}/> Observações</h3>
@@ -293,7 +303,6 @@ export function PatientProfile() {
               </div>
             )}
 
-            {/* Attachments count */}
             {patientFiles.length > 0 && (
               <div className={styles.card} style={{ cursor: 'pointer' }} onClick={() => setActiveTab('anexos')}>
                 <h3 className={styles.cardTitle}><Paperclip size={14}/> Anexos</h3>
@@ -301,7 +310,6 @@ export function PatientProfile() {
               </div>
             )}
 
-            {/* Portal access */}
             <div className={styles.card}>
               <h3 className={styles.cardTitle}><Wifi size={14}/> Portal da paciente</h3>
               {patient.accessCode ? (
@@ -336,18 +344,35 @@ export function PatientProfile() {
                 </button>
               </div>
             ) : (
-              <div className={styles.sessionList}>
-                {patientSessions.map((s, idx) => (
-                  <SessionRow
-                    key={s.id}
-                    session={s}
-                    sessionNumber={stats.realizadas - patientSessions.filter((ss, i) => i >= idx && ss.status === 'realizada').length + 1}
-                    expanded={expandedSession === s.id}
-                    onToggle={() => setExpandedSession(expandedSession === s.id ? null : s.id)}
-                    onEdit={() => navigate(`/admin/sessoes/${s.id}/editar`)}
-                  />
-                ))}
-              </div>
+              <>
+                <div className={styles.sessionListHeader}>
+                  <span className={styles.sessionListCount}>
+                    {patientSessions.length} sessão{patientSessions.length !== 1 ? 'ões' : ''} · {stats.realizadas} realizada{stats.realizadas !== 1 ? 's' : ''}
+                  </span>
+                  <button
+                    className={styles.btnPdfSm}
+                    onClick={handleEvolutionPDF}
+                    title="Exportar histórico completo em PDF"
+                  >
+                    <Download size={13}/> PDF histórico completo
+                  </button>
+                </div>
+                <div className={styles.sessionList}>
+                  {patientSessions.map((s) => (
+                    <SessionRow
+                      key={s.id}
+                      session={s}
+                      sessionNumber={sessionNumberMap[s.id] ?? 0}
+                      expanded={expandedSession === s.id}
+                      onToggle={() => setExpandedSession(expandedSession === s.id ? null : s.id)}
+                      onEdit={() => navigate(`/admin/sessoes/${s.id}/editar`)}
+                      onEditNotes={(sid, patch) => editSession(sid, patch)}
+                      patient={patient}
+                      config={config}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}
@@ -388,6 +413,8 @@ export function PatientProfile() {
                   <tbody>
                     {patientSessions
                       .filter(s => s.status === 'realizada')
+                      .slice()
+                      .reverse()
                       .map(s => (
                         <tr key={s.id}>
                           <td>{format(parseISO(s.date), "d/MM/yyyy")}</td>
@@ -456,24 +483,93 @@ function FinCard({ label, value, color }: { label: string; value: string; color:
   )
 }
 
+// ── SessionRow ─────────────────────────────────────────────────────────────
+type NotesDraft = {
+  mood:             string
+  demands:          string
+  descricaoDemanda: string
+  resumoSessao:     string
+  interventions:    string
+  evolution:        string
+  clinicalNotes:    string
+  nextGoals:        string
+  observacoes:      string
+}
+
+function sessionToDraft(s: Session): NotesDraft {
+  return {
+    mood:             s.mood             ?? '',
+    demands:          s.demands          ?? '',
+    descricaoDemanda: s.descricaoDemanda ?? '',
+    resumoSessao:     s.resumoSessao     ?? '',
+    interventions:    s.interventions    ?? '',
+    evolution:        s.evolution        ?? '',
+    clinicalNotes:    s.clinicalNotes    ?? '',
+    nextGoals:        s.nextGoals        ?? '',
+    observacoes:      s.observacoes      ?? '',
+  }
+}
+
 function SessionRow({
-  session, sessionNumber, expanded, onToggle, onEdit,
+  session, sessionNumber, expanded, onToggle, onEdit, onEditNotes, patient, config,
 }: {
-  session: Session
+  session:       Session
   sessionNumber: number
-  expanded: boolean
-  onToggle: () => void
-  onEdit: () => void
+  expanded:      boolean
+  onToggle:      () => void
+  onEdit:        () => void
+  onEditNotes:   (id: string, patch: Partial<Session>) => void
+  patient:       Patient
+  config:        ClinicConfig
 }) {
   const color = SESSION_STATUS_COLOR[session.status] ?? 'var(--text3)'
   const label = SESSION_STATUS_LABEL[session.status] ?? session.status
+
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft]     = useState<NotesDraft>(() => sessionToDraft(session))
+
+  useEffect(() => {
+    setDraft(sessionToDraft(session))
+    setEditing(false)
+  }, [session.id])
+
+  function handleSave() {
+    onEditNotes(session.id, {
+      mood:             draft.mood             || undefined,
+      demands:          draft.demands          || undefined,
+      descricaoDemanda: draft.descricaoDemanda || undefined,
+      resumoSessao:     draft.resumoSessao     || undefined,
+      interventions:    draft.interventions    || undefined,
+      evolution:        draft.evolution        || undefined,
+      clinicalNotes:    draft.clinicalNotes    || undefined,
+      nextGoals:        draft.nextGoals        || undefined,
+      observacoes:      draft.observacoes      || undefined,
+    })
+    setEditing(false)
+  }
+
+  function handleCancel() {
+    setDraft(sessionToDraft(session))
+    setEditing(false)
+  }
+
+  function handlePDF(e: React.MouseEvent) {
+    e.stopPropagation()
+    generateSessionPDF(patient, session, sessionNumber, config)
+  }
+
+  const hasNotes = !!(
+    session.mood || session.demands || session.descricaoDemanda ||
+    session.resumoSessao || session.interventions || session.evolution ||
+    session.clinicalNotes || session.nextGoals || session.observacoes
+  )
 
   return (
     <div className={styles.sessionCard}>
       <div className={styles.sessionCardHeader} onClick={onToggle}>
         <div className={styles.sessionCardLeft}>
           <span className={styles.sessionDate}>
-            {format(parseISO(session.date), "d MMM yyyy", { locale: ptBR })} · {session.time}
+            {format(parseISO(session.date), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })} · {session.time}
           </span>
           <div className={styles.sessionCardMeta}>
             {session.status === 'realizada' && (
@@ -502,11 +598,14 @@ function SessionRow({
                 </span>
               : null
             }
+            {hasNotes && !expanded && (
+              <span className={styles.notesDot} title="Possui anotações clínicas"/>
+            )}
           </div>
         </div>
         <div className={styles.sessionCardRight}>
           <span className={styles.sessionValue}>{session.value > 0 ? `R$ ${session.value}` : ''}</span>
-          <button className={styles.editBtn} onClick={e => { e.stopPropagation(); onEdit() }}>
+          <button className={styles.editBtn} title="Editar dados da sessão" onClick={e => { e.stopPropagation(); onEdit() }}>
             <Edit2 size={13}/>
           </button>
           {expanded ? <ChevronUp size={15} style={{ color: 'var(--text3)' }}/> : <ChevronDown size={15} style={{ color: 'var(--text3)' }}/>}
@@ -515,38 +614,151 @@ function SessionRow({
 
       {expanded && (
         <div className={styles.sessionCardBody}>
-          {session.demands && (
-            <Note label="Queixa do dia" text={session.demands}/>
-          )}
-          {session.descricaoDemanda && (
-            <Note label="Descrição da demanda" text={session.descricaoDemanda}/>
-          )}
-          {session.mood && (
-            <Note label="Estado emocional" text={session.mood}/>
-          )}
-          {session.resumoSessao && (
-            <Note label="Resumo da sessão" text={session.resumoSessao}/>
-          )}
-          {session.interventions && (
-            <Note label="Intervenções" text={session.interventions}/>
-          )}
-          {session.evolution && (
-            <Note label="Evolução" text={session.evolution}/>
-          )}
-          {session.clinicalNotes && (
-            <Note label="Notas clínicas" text={session.clinicalNotes}/>
-          )}
-          {session.nextGoals && (
-            <Note label="Próximos objetivos" text={session.nextGoals}/>
-          )}
-          {session.observacoes && (
-            <Note label="Observações" text={session.observacoes}/>
-          )}
-          {!session.demands && !session.resumoSessao && !session.clinicalNotes && !session.interventions && (
-            <p className={styles.noNotes}>Nenhuma nota clínica registrada.</p>
+          {/* ── Ações do corpo ────────────────────────────────────────── */}
+          <div className={styles.sessionBodyActions}>
+            {session.status === 'realizada' && !editing && (
+              <button
+                className={styles.btnEditNotes}
+                onClick={() => setEditing(true)}
+              >
+                <Edit2 size={13}/> {hasNotes ? 'Editar registro clínico' : 'Adicionar registro clínico'}
+              </button>
+            )}
+            {session.status === 'realizada' && (
+              <button className={styles.btnPdfSession} onClick={handlePDF}>
+                <Download size={13}/> PDF desta sessão
+              </button>
+            )}
+          </div>
+
+          {/* ── Modo edição ───────────────────────────────────────────── */}
+          {editing ? (
+            <div className={styles.notesEditor}>
+              <NoteField
+                label="Humor percebido"
+                value={draft.mood}
+                onChange={v => setDraft(d => ({ ...d, mood: v }))}
+                placeholder="Como o paciente se apresentou emocionalmente..."
+                rows={2}
+              />
+              <NoteField
+                label="Demanda trazida pelo paciente"
+                value={draft.demands}
+                onChange={v => setDraft(d => ({ ...d, demands: v }))}
+                placeholder="O que o paciente trouxe nesta sessão..."
+                rows={2}
+              />
+              <NoteField
+                label="Descrição detalhada da demanda"
+                value={draft.descricaoDemanda}
+                onChange={v => setDraft(d => ({ ...d, descricaoDemanda: v }))}
+                placeholder="Contexto e detalhes relevantes da demanda..."
+                rows={3}
+              />
+              <NoteField
+                label="Resumo da sessão"
+                value={draft.resumoSessao}
+                onChange={v => setDraft(d => ({ ...d, resumoSessao: v }))}
+                placeholder="Síntese do que foi trabalhado, temas e insights..."
+                rows={4}
+              />
+              <NoteField
+                label="Intervenção realizada"
+                value={draft.interventions}
+                onChange={v => setDraft(d => ({ ...d, interventions: v }))}
+                placeholder="Técnicas e abordagens utilizadas..."
+                rows={3}
+              />
+              <NoteField
+                label="Evolução / Observações clínicas"
+                value={draft.evolution}
+                onChange={v => setDraft(d => ({ ...d, evolution: v }))}
+                placeholder="Progresso e observações clínicas relevantes..."
+                rows={3}
+              />
+              <NoteField
+                label="Notas clínicas"
+                value={draft.clinicalNotes}
+                onChange={v => setDraft(d => ({ ...d, clinicalNotes: v }))}
+                placeholder="Hipóteses, reflexões, pontos de atenção..."
+                rows={3}
+              />
+              <NoteField
+                label="Encaminhamentos / Combinados para próxima sessão"
+                value={draft.nextGoals}
+                onChange={v => setDraft(d => ({ ...d, nextGoals: v }))}
+                placeholder="O que foi combinado, tarefas, focos para o próximo encontro..."
+                rows={2}
+              />
+              <NoteField
+                label="Observações gerais"
+                value={draft.observacoes}
+                onChange={v => setDraft(d => ({ ...d, observacoes: v }))}
+                placeholder="Outras observações relevantes..."
+                rows={2}
+              />
+              <div className={styles.editorActions}>
+                <button className={styles.btnCancelEdit} onClick={handleCancel}>
+                  <X size={13}/> Cancelar
+                </button>
+                <button className={styles.btnSaveNotes} onClick={handleSave}>
+                  <Save size={13}/> Salvar registro
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* ── Modo leitura ─────────────────────────────────────────── */
+            <div className={styles.notesReadView}>
+              {hasNotes ? (
+                <>
+                  {session.mood             && <Note label="Humor percebido"                              text={session.mood}/>}
+                  {session.demands          && <Note label="Demanda trazida"                              text={session.demands}/>}
+                  {session.descricaoDemanda && <Note label="Descrição da demanda"                         text={session.descricaoDemanda}/>}
+                  {session.resumoSessao     && <Note label="Resumo da sessão"                             text={session.resumoSessao}/>}
+                  {session.interventions    && <Note label="Intervenção realizada"                        text={session.interventions}/>}
+                  {session.evolution        && <Note label="Evolução / Observações clínicas"              text={session.evolution}/>}
+                  {session.clinicalNotes    && <Note label="Notas clínicas"                               text={session.clinicalNotes}/>}
+                  {session.nextGoals        && <Note label="Encaminhamentos / Combinados"                 text={session.nextGoals}/>}
+                  {session.observacoes      && <Note label="Observações gerais"                           text={session.observacoes}/>}
+                </>
+              ) : (
+                <p className={styles.noNotes}>
+                  {session.status === 'realizada'
+                    ? 'Nenhuma nota clínica registrada. Clique em "Adicionar registro clínico" para preencher.'
+                    : 'Registro clínico disponível apenas para sessões realizadas.'
+                  }
+                </p>
+              )}
+              {session.cancelReason && (
+                <Note label="Motivo do cancelamento / remarcação" text={session.cancelReason}/>
+              )}
+            </div>
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function NoteField({
+  label, value, onChange, placeholder, rows,
+}: {
+  label:       string
+  value:       string
+  onChange:    (v: string) => void
+  placeholder: string
+  rows:        number
+}) {
+  return (
+    <div className={styles.editorField}>
+      <label className={styles.editorLabel}>{label}</label>
+      <textarea
+        className={styles.editorTextarea}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+      />
     </div>
   )
 }
