@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 import { Lock, KeyRound, Eye, EyeOff, Heart, Mail } from 'lucide-react'
 import { usePsicoStore } from '../store/store'
+import { firebaseAuth, firebaseEnabled } from '../config/firebase'
 import styles from './LoginPage.module.css'
 
 type Tab = 'psicologa' | 'paciente'
 
 export function LoginPage() {
-  const navigate       = useNavigate()
-  const loginPsicologa = usePsicoStore(s => s.loginPsicologa)
-  const loginPaciente  = usePsicoStore(s => s.loginPaciente)
-  const config         = usePsicoStore(s => s.config)
+  const navigate          = useNavigate()
+  const loginPsicologa    = usePsicoStore(s => s.loginPsicologa)
+  const loginPaciente     = usePsicoStore(s => s.loginPaciente)
+  const loginWithFirebase = usePsicoStore(s => s.loginWithFirebase)
+  const config            = usePsicoStore(s => s.config)
 
   const requireEmail = Boolean(config.email)
 
@@ -29,26 +32,65 @@ export function LoginPage() {
     setError('')
   }
 
+  // ── Login da psicóloga ────────────────────────────────────────────────────
+  async function handlePsicologaLogin() {
+    setLoading(true)
+    setError('')
+
+    // ── Caminho Firebase (se configurado) ──────────────────────────────────
+    if (firebaseEnabled && firebaseAuth) {
+      try {
+        const cred = await signInWithEmailAndPassword(firebaseAuth, email, password)
+        await loginWithFirebase(cred.user.uid)
+        navigate('/admin/dashboard')
+      } catch (err: unknown) {
+        const code = (err as { code?: string }).code ?? ''
+        if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+          setError('E-mail ou senha incorretos.')
+        } else if (code === 'auth/invalid-email') {
+          setError('E-mail inválido.')
+        } else if (code === 'auth/too-many-requests') {
+          setError('Muitas tentativas. Aguarde alguns minutos.')
+        } else {
+          setError('Erro ao conectar. Verifique sua internet.')
+        }
+        setLoading(false)
+      }
+      return
+    }
+
+    // ── Caminho local (sem Firebase) ───────────────────────────────────────
+    setTimeout(() => {
+      const ok = loginPsicologa(password, requireEmail ? email : undefined)
+      if (ok) navigate('/admin/dashboard')
+      else    setError(requireEmail ? 'E-mail ou senha incorretos.' : 'Senha incorreta.')
+      setLoading(false)
+    }, 400)
+  }
+
+  // ── Login do paciente (sempre local) ─────────────────────────────────────
+  function handlePacienteLogin() {
+    setLoading(true)
+    setError('')
+    setTimeout(() => {
+      const ok = loginPaciente(code)
+      if (ok) navigate('/paciente')
+      else    setError('Código não encontrado. Verifique com sua psicóloga.')
+      setLoading(false)
+    }, 400)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-    setLoading(true)
-    setTimeout(() => {
-      if (tab === 'psicologa') {
-        const ok = loginPsicologa(password, requireEmail ? email : undefined)
-        if (ok) navigate('/admin/dashboard')
-        else    setError(requireEmail ? 'E-mail ou senha incorretos.' : 'Senha incorreta. Tente novamente.')
-      } else {
-        const ok = loginPaciente(code)
-        if (ok) navigate('/paciente')
-        else    setError('Código não encontrado. Verifique com sua psicóloga.')
-      }
-      setLoading(false)
-    }, 600)
+    if (tab === 'psicologa') handlePsicologaLogin()
+    else                     handlePacienteLogin()
   }
 
   const canSubmit = tab === 'psicologa'
-    ? (requireEmail ? email.trim() && password.trim() : password.trim())
+    ? (firebaseEnabled
+        ? email.trim() && password.trim()
+        : (requireEmail ? email.trim() && password.trim() : password.trim())
+      )
     : code.trim()
 
   return (
@@ -90,7 +132,8 @@ export function LoginPage() {
             <>
               <p className={styles.welcomeText}>Bem-vinda de volta 🌿</p>
 
-              {requireEmail && (
+              {/* E-mail — sempre quando Firebase está ativo */}
+              {(firebaseEnabled || requireEmail) && (
                 <div className={styles.field}>
                   <label className={styles.label}>E-mail</label>
                   <div className={styles.inputWrap}>
@@ -108,7 +151,7 @@ export function LoginPage() {
               )}
 
               <div className={styles.field}>
-                <label className={styles.label}>Senha de acesso</label>
+                <label className={styles.label}>Senha</label>
                 <div className={styles.inputWrap}>
                   <input
                     type={show ? 'text' : 'password'}
@@ -116,7 +159,7 @@ export function LoginPage() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     className={error ? styles.inputError : ''}
-                    autoFocus={!requireEmail}
+                    autoFocus={!firebaseEnabled && !requireEmail}
                   />
                   <button type="button" className={styles.eyeBtn} onClick={() => setShow(v => !v)} tabIndex={-1}>
                     {show ? <EyeOff size={16}/> : <Eye size={16}/>}
@@ -157,8 +200,11 @@ export function LoginPage() {
       <div className={styles.helpCard}>
         <p className={styles.helpTitle}>📋 Como acessar</p>
         <div className={styles.helpItem}>
-          <Lock size={12}/> <strong>Psicóloga</strong>
-          {requireEmail
+          <Lock size={12}/>
+          <strong>Psicóloga</strong>
+          {firebaseEnabled
+            ? <span>→ e-mail + senha do Firebase</span>
+            : requireEmail
             ? <span>→ e-mail + senha cadastrados</span>
             : <span>→ senha: <code className={styles.code}>psico2025</code></span>
           }
@@ -167,9 +213,6 @@ export function LoginPage() {
           <KeyRound size={12}/> <strong>Paciente</strong>
           <span>→ código gerado no cadastro</span>
         </div>
-        <p className={styles.helpHint}>
-          Cadastre sua primeira paciente como psicóloga, defina um código de acesso e ela poderá entrar pelo portal.
-        </p>
       </div>
     </div>
   )

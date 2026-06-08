@@ -133,7 +133,8 @@ export interface ClinicConfig {
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 export interface AuthState {
-  role:      UserRole | null
-  patientId: string | null
-  loggedIn:  boolean
+  role:        UserRole | null
+  patientId:   string | null
+  loggedIn:    boolean
+  firebaseUid: string | null   // UID do Firebase (null quando offline/local)
 }

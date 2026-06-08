@@ -6,6 +6,8 @@ import type {
   Anamnese, PlanoTerapeutico,
   ClinicConfig, AuthState, PatientStatus,
 } from '../types'
+import { firestoreSync, loadFromFirestore, pushAllToFirestore, type FirestoreData } from '../services/firestore'
+import { firebaseAuth } from '../config/firebase'
 
 // ── Default config ─────────────────────────────────────────────────────────
 const DEFAULT_CONFIG: ClinicConfig = {
@@ -24,15 +26,15 @@ const DEFAULT_CONFIG: ClinicConfig = {
 
 // ── Backup shape ───────────────────────────────────────────────────────────
 export interface BackupData {
-  version:    string
-  exportedAt: string
-  patients:   Patient[]
-  sessions:   Session[]
-  documents:  PatientDocument[]
-  attachments?:PatientAttachment[]
-  anamneses?: Anamnese[]
-  plans?:     PlanoTerapeutico[]
-  config:     ClinicConfig
+  version:     string
+  exportedAt:  string
+  patients:    Patient[]
+  sessions:    Session[]
+  documents:   PatientDocument[]
+  attachments?: PatientAttachment[]
+  anamneses?:  Anamnese[]
+  plans?:      PlanoTerapeutico[]
+  config:      ClinicConfig
 }
 
 // ── Store shape ────────────────────────────────────────────────────────────
@@ -46,10 +48,13 @@ interface PsicoState {
   plans:       PlanoTerapeutico[]
   config:      ClinicConfig
 
-  // Auth
+  // Auth — local (senha)
   loginPsicologa:  (password: string, email?: string) => boolean
   loginPaciente:   (code: string) => boolean
   logout:          () => void
+
+  // Auth — Firebase
+  loginWithFirebase: (uid: string) => Promise<void>
 
   // Patients
   addPatient:  (p: Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>) => string
@@ -66,7 +71,7 @@ interface PsicoState {
   deleteDocument: (id: string) => void
   shareDocument:  (id: string, shared: boolean) => void
 
-  // Attachments
+  // Attachments (local only)
   addAttachment:    (a: Omit<PatientAttachment, 'id' | 'createdAt'>) => string
   deleteAttachment: (id: string) => void
 
@@ -81,12 +86,20 @@ interface PsicoState {
 
   // Backup
   importBackup: (data: BackupData) => void
+
+  // Carrega dados do Firestore e atualiza o store (usado pelo App.tsx)
+  applyFirestoreData: (data: FirestoreData) => void
+}
+
+// ── Helper: UID atual ──────────────────────────────────────────────────────
+function uid(get: () => PsicoState): string | null {
+  return get().auth.firebaseUid ?? null
 }
 
 export const usePsicoStore = create<PsicoState>()(
   persist(
     (set, get) => ({
-      auth:        { role: null, patientId: null, loggedIn: false },
+      auth:        { role: null, patientId: null, loggedIn: false, firebaseUid: null },
       patients:    [],
       sessions:    [],
       documents:   [],
@@ -95,7 +108,7 @@ export const usePsicoStore = create<PsicoState>()(
       plans:       [],
       config:      DEFAULT_CONFIG,
 
-      // ── Auth ──────────────────────────────────────────────────────────
+      // ── Auth — local ──────────────────────────────────────────────────
       loginPsicologa: (password, email) => {
         const { config } = get()
         const senhaOk = password === (config.password ?? 'psico2025')
@@ -103,7 +116,7 @@ export const usePsicoStore = create<PsicoState>()(
           ? true
           : email.toLowerCase() === config.email.toLowerCase()
         if (senhaOk && emailOk) {
-          set({ auth: { role: 'psicologa', patientId: null, loggedIn: true } })
+          set({ auth: { role: 'psicologa', patientId: null, loggedIn: true, firebaseUid: null } })
           return true
         }
         return false
@@ -114,78 +127,157 @@ export const usePsicoStore = create<PsicoState>()(
           p => p.accessCode?.toUpperCase() === code.toUpperCase()
         )
         if (patient) {
-          set({ auth: { role: 'paciente', patientId: patient.id, loggedIn: true } })
+          set({ auth: { role: 'paciente', patientId: patient.id, loggedIn: true, firebaseUid: null } })
           return true
         }
         return false
       },
 
-      logout: () => set({ auth: { role: null, patientId: null, loggedIn: false } }),
+      logout: () => {
+        if (firebaseAuth) firebaseAuth.signOut().catch(() => {})
+        set({ auth: { role: null, patientId: null, loggedIn: false, firebaseUid: null } })
+      },
+
+      // ── Auth — Firebase ───────────────────────────────────────────────
+      loginWithFirebase: async (userUid) => {
+        const state = get()
+
+        // Carrega dados do Firestore
+        const firestoreData = await loadFromFirestore(userUid)
+        const hasFirestoreData = firestoreData.patients.length > 0 || firestoreData.sessions.length > 0
+
+        // Se Firestore está vazio mas há dados locais → faz upload (migração)
+        if (!hasFirestoreData && (state.patients.length > 0 || state.sessions.length > 0)) {
+          await pushAllToFirestore(userUid, {
+            patients:  state.patients,
+            sessions:  state.sessions,
+            documents: state.documents,
+            anamneses: state.anamneses,
+            plans:     state.plans,
+            config:    state.config,
+          })
+        }
+
+        // Atualiza o store
+        set({
+          auth: { role: 'psicologa', patientId: null, loggedIn: true, firebaseUid: userUid },
+          ...(hasFirestoreData ? {
+            patients:  firestoreData.patients,
+            sessions:  firestoreData.sessions,
+            documents: firestoreData.documents,
+            anamneses: firestoreData.anamneses,
+            plans:     firestoreData.plans,
+            config:    firestoreData.config
+              ? { ...DEFAULT_CONFIG, ...firestoreData.config }
+              : state.config,
+          } : {}),
+        })
+      },
+
+      // ── Aplicar dados do Firestore (restauração de sessão no App.tsx) ──
+      applyFirestoreData: (data) => {
+        const hasData = data.patients.length > 0 || data.sessions.length > 0
+        if (!hasData) return
+        set({
+          patients:  data.patients,
+          sessions:  data.sessions,
+          documents: data.documents,
+          anamneses: data.anamneses,
+          plans:     data.plans,
+          ...(data.config ? { config: { ...DEFAULT_CONFIG, ...data.config } } : {}),
+        })
+      },
 
       // ── Patients ──────────────────────────────────────────────────────
       addPatient: (p) => {
         const id  = crypto.randomUUID()
         const now = new Date().toISOString()
-        set(s => ({ patients: [...s.patients, { ...p, id, createdAt: now, updatedAt: now }] }))
+        const patient: Patient = { ...p, id, createdAt: now, updatedAt: now }
+        set(s => ({ patients: [...s.patients, patient] }))
+        const u = uid(get); if (u) firestoreSync.patient(u, patient)
         return id
       },
 
       editPatient: (id, patch) => {
+        const now = new Date().toISOString()
+        let updated: Patient | undefined
         set(s => ({
-          patients: s.patients.map(p =>
-            p.id === id ? { ...p, ...patch, updatedAt: new Date().toISOString() } : p
-          ),
+          patients: s.patients.map(p => {
+            if (p.id !== id) return p
+            updated = { ...p, ...patch, updatedAt: now }
+            return updated
+          }),
         }))
+        const u = uid(get); if (u && updated) firestoreSync.patient(u, updated)
       },
 
       setStatus: (id, status) => {
         const now = new Date().toISOString()
+        let updated: Patient | undefined
         set(s => ({
-          patients: s.patients.map(p =>
-            p.id === id
-              ? { ...p, status, updatedAt: now, endDate: status === 'encerrado' ? now.split('T')[0] : p.endDate }
-              : p
-          ),
+          patients: s.patients.map(p => {
+            if (p.id !== id) return p
+            updated = { ...p, status, updatedAt: now, endDate: status === 'encerrado' ? now.split('T')[0] : p.endDate }
+            return updated
+          }),
         }))
+        const u = uid(get); if (u && updated) firestoreSync.patient(u, updated)
       },
 
       // ── Sessions ──────────────────────────────────────────────────────
       addSession: (s) => {
         const id  = crypto.randomUUID()
         const now = new Date().toISOString()
-        set(st => ({ sessions: [...st.sessions, { ...s, id, createdAt: now, updatedAt: now }] }))
+        const session: Session = { ...s, id, createdAt: now, updatedAt: now }
+        set(st => ({ sessions: [...st.sessions, session] }))
+        const u = uid(get); if (u) firestoreSync.session(u, session)
         return id
       },
 
       editSession: (id, patch) => {
+        const now = new Date().toISOString()
+        let updated: Session | undefined
         set(s => ({
-          sessions: s.sessions.map(ss =>
-            ss.id === id ? { ...ss, ...patch, updatedAt: new Date().toISOString() } : ss
-          ),
+          sessions: s.sessions.map(ss => {
+            if (ss.id !== id) return ss
+            updated = { ...ss, ...patch, updatedAt: now }
+            return updated
+          }),
         }))
+        const u = uid(get); if (u && updated) firestoreSync.session(u, updated)
       },
 
       deleteSession: (id) => {
         set(s => ({ sessions: s.sessions.filter(ss => ss.id !== id) }))
+        const u = uid(get); if (u) firestoreSync.delSession(u, id)
       },
 
       // ── Documents ─────────────────────────────────────────────────────
       addDocument: (d) => {
         const id  = crypto.randomUUID()
         const now = new Date().toISOString()
-        set(s => ({ documents: [...s.documents, { ...d, id, createdAt: now }] }))
+        const doc: PatientDocument = { ...d, id, createdAt: now }
+        set(s => ({ documents: [...s.documents, doc] }))
+        const u = uid(get); if (u) firestoreSync.document(u, doc)
         return id
       },
       deleteDocument: (id) => {
         set(s => ({ documents: s.documents.filter(d => d.id !== id) }))
+        const u = uid(get); if (u) firestoreSync.delDocument(u, id)
       },
       shareDocument: (id, shared) => {
+        let updated: PatientDocument | undefined
         set(s => ({
-          documents: s.documents.map(d => d.id === id ? { ...d, sharedWithPatient: shared } : d),
+          documents: s.documents.map(d => {
+            if (d.id !== id) return d
+            updated = { ...d, sharedWithPatient: shared }
+            return updated
+          }),
         }))
+        const u = uid(get); if (u && updated) firestoreSync.document(u, updated)
       },
 
-      // ── Attachments ───────────────────────────────────────────────────
+      // ── Attachments (local only — base64 pode exceder limite Firestore) ─
       addAttachment: (a) => {
         const id  = crypto.randomUUID()
         const now = new Date().toISOString()
@@ -199,36 +291,47 @@ export const usePsicoStore = create<PsicoState>()(
       // ── Anamnese ──────────────────────────────────────────────────────
       upsertAnamnese: (data) => {
         const now = new Date().toISOString()
+        let upserted: Anamnese | undefined
         set(s => {
           const exists = s.anamneses.some(a => a.patientId === data.patientId)
-          return {
-            anamneses: exists
-              ? s.anamneses.map(a =>
-                  a.patientId === data.patientId ? { ...a, ...data, updatedAt: now } : a
-                )
-              : [...s.anamneses, { ...data, updatedAt: now }],
-          }
+          const list = exists
+            ? s.anamneses.map(a => {
+                if (a.patientId !== data.patientId) return a
+                upserted = { ...a, ...data, updatedAt: now }
+                return upserted
+              })
+            : [...s.anamneses, (upserted = { ...data, updatedAt: now })]
+          return { anamneses: list }
         })
+        const u = uid(get); if (u && upserted) firestoreSync.anamnese(u, upserted)
       },
 
       // ── Plano ─────────────────────────────────────────────────────────
       upsertPlano: (data) => {
         const now = new Date().toISOString()
+        let upserted: PlanoTerapeutico | undefined
         set(s => {
           const exists = s.plans.some(p => p.patientId === data.patientId)
-          return {
-            plans: exists
-              ? s.plans.map(p =>
-                  p.patientId === data.patientId ? { ...p, ...data, updatedAt: now } : p
-                )
-              : [...s.plans, { ...data, updatedAt: now }],
-          }
+          const list = exists
+            ? s.plans.map(p => {
+                if (p.patientId !== data.patientId) return p
+                upserted = { ...p, ...data, updatedAt: now }
+                return upserted
+              })
+            : [...s.plans, (upserted = { ...data, updatedAt: now })]
+          return { plans: list }
         })
+        const u = uid(get); if (u && upserted) firestoreSync.plan(u, upserted)
       },
 
       // ── Config ────────────────────────────────────────────────────────
       editConfig: (patch) => {
         set(s => ({ config: { ...s.config, ...patch } }))
+        // Sync config depois que o state foi atualizado
+        setTimeout(() => {
+          const u = uid(get)
+          if (u) firestoreSync.config(u, get().config)
+        }, 0)
       },
 
       // ── Backup ────────────────────────────────────────────────────────
@@ -241,7 +344,7 @@ export const usePsicoStore = create<PsicoState>()(
           anamneses:   data.anamneses   ?? [],
           plans:       data.plans       ?? [],
           config:      { ...DEFAULT_CONFIG, ...data.config },
-          auth:        { role: null, patientId: null, loggedIn: false },
+          auth:        { role: null, patientId: null, loggedIn: false, firebaseUid: null },
         })
       },
     }),
