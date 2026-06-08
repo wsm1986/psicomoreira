@@ -10,6 +10,7 @@ import {
   getSnapshots, getBackupMeta, setBackupMeta,
   markFileBackupDone, type Snapshot,
 } from '../utils/autoBackup'
+import { firebaseEnabled } from '../config/firebase'
 import styles from './SettingsPage.module.css'
 
 const schema = z.object({
@@ -45,9 +46,12 @@ export function SettingsPage() {
   const attachments  = usePsicoStore(s => s.attachments)
   const anamneses    = usePsicoStore(s => s.anamneses)
   const plans        = usePsicoStore(s => s.plans)
-  const editConfig   = usePsicoStore(s => s.editConfig)
-  const importBackup = usePsicoStore(s => s.importBackup)
+  const auth                   = usePsicoStore(s => s.auth)
+  const editConfig             = usePsicoStore(s => s.editConfig)
+  const importBackup           = usePsicoStore(s => s.importBackup)
+  const migrateLocalToFirestore= usePsicoStore(s => s.migrateLocalToFirestore)
 
+  const [migrateStatus,  setMigrateStatus]  = useState<'idle' | 'running' | 'ok' | 'error'>('idle')
   const [showPwd,        setShowPwd]        = useState(false)
   const [importStatus,   setImportStatus]   = useState<'idle' | 'ok' | 'error'>('idle')
   const [importMsg,      setImportMsg]      = useState('')
@@ -339,6 +343,34 @@ export function SettingsPage() {
               onChange={handleImport}
             />
           </div>
+
+          {/* Migração para Firebase — só aparece quando Firebase está ativo */}
+          {firebaseEnabled && auth.firebaseUid && patients.length > 0 && (
+            <div className={styles.migrateBlock}>
+              <p className={styles.migrateText}>
+                Tem dados locais que ainda não estão na nuvem? Envie tudo para o Firebase agora.
+              </p>
+              <button
+                type="button"
+                className={styles.btnMigrate}
+                disabled={migrateStatus === 'running'}
+                onClick={async () => {
+                  setMigrateStatus('running')
+                  try {
+                    await migrateLocalToFirestore()
+                    setMigrateStatus('ok')
+                  } catch {
+                    setMigrateStatus('error')
+                  }
+                }}
+              >
+                {migrateStatus === 'running' ? '⏳ Enviando...'
+                  : migrateStatus === 'ok'   ? '✓ Dados enviados para o Firebase'
+                  : migrateStatus === 'error' ? '⚠ Erro ao enviar — tente novamente'
+                  : '☁ Migrar dados para o Firebase'}
+              </button>
+            </div>
+          )}
 
           {importStatus !== 'idle' && (
             <div className={`${styles.importMsg} ${importStatus === 'ok' ? styles.importOk : styles.importErr}`}>

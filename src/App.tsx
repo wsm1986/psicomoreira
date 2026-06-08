@@ -66,19 +66,28 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
       const store = usePsicoStore.getState()
 
-      if (user && !store.auth.loggedIn) {
-        // Firebase tem sessão ativa mas o Zustand foi resetado (ex: reload da página)
-        // Restaura os dados do Firestore e marca como logado
-        const data = await loadFromFirestore(user.uid)
-        store.applyFirestoreData(data)
-        usePsicoStore.setState({
-          auth: {
-            role:        'psicologa',
-            patientId:   null,
-            loggedIn:    true,
-            firebaseUid: user.uid,
-          },
-        })
+      if (user) {
+        // Firebase tem sessão ativa.
+        // Se o UID local é diferente do Firebase (ou não há sessão local),
+        // carrega sempre do Firestore — garante isolamento entre usuários.
+        const localUid = store.auth.firebaseUid
+        if (!store.auth.loggedIn || localUid !== user.uid) {
+          const data = await loadFromFirestore(user.uid)
+          store.applyFirestoreData(data)
+          usePsicoStore.setState({
+            auth: {
+              role:        'psicologa',
+              patientId:   null,
+              loggedIn:    true,
+              firebaseUid: user.uid,
+            },
+          })
+        }
+      } else {
+        // Firebase não tem sessão — garante que o store está limpo
+        if (store.auth.firebaseUid) {
+          store.logout()
+        }
       }
 
       setAuthChecking(false)

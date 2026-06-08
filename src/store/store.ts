@@ -89,6 +89,9 @@ interface PsicoState {
 
   // Carrega dados do Firestore e atualiza o store (usado pelo App.tsx)
   applyFirestoreData: (data: FirestoreData) => void
+
+  // Migração manual: sobe dados locais para o Firestore (primeira vez)
+  migrateLocalToFirestore: () => Promise<void>
 }
 
 // ── Helper: UID atual ──────────────────────────────────────────────────────
@@ -135,56 +138,61 @@ export const usePsicoStore = create<PsicoState>()(
 
       logout: () => {
         if (firebaseAuth) firebaseAuth.signOut().catch(() => {})
-        set({ auth: { role: null, patientId: null, loggedIn: false, firebaseUid: null } })
+        // Limpa TODOS os dados locais para evitar vazamento entre usuários
+        localStorage.removeItem(STORAGE_KEY)
+        set({
+          auth:        { role: null, patientId: null, loggedIn: false, firebaseUid: null },
+          patients:    [],
+          sessions:    [],
+          documents:   [],
+          attachments: [],
+          anamneses:   [],
+          plans:       [],
+          config:      DEFAULT_CONFIG,
+        })
       },
 
       // ── Auth — Firebase ───────────────────────────────────────────────
       loginWithFirebase: async (userUid) => {
-        const state = get()
+        // Sempre carrega do Firestore — ele é a fonte da verdade.
+        // NUNCA usa dados locais para inicializar uma sessão Firebase,
+        // pois poderiam ser de outro usuário.
+        const data = await loadFromFirestore(userUid)
 
-        // Carrega dados do Firestore
-        const firestoreData = await loadFromFirestore(userUid)
-        const hasFirestoreData = firestoreData.patients.length > 0 || firestoreData.sessions.length > 0
-
-        // Se Firestore está vazio mas há dados locais → faz upload (migração)
-        if (!hasFirestoreData && (state.patients.length > 0 || state.sessions.length > 0)) {
-          await pushAllToFirestore(userUid, {
-            patients:  state.patients,
-            sessions:  state.sessions,
-            documents: state.documents,
-            anamneses: state.anamneses,
-            plans:     state.plans,
-            config:    state.config,
-          })
-        }
-
-        // Atualiza o store
         set({
-          auth: { role: 'psicologa', patientId: null, loggedIn: true, firebaseUid: userUid },
-          ...(hasFirestoreData ? {
-            patients:  firestoreData.patients,
-            sessions:  firestoreData.sessions,
-            documents: firestoreData.documents,
-            anamneses: firestoreData.anamneses,
-            plans:     firestoreData.plans,
-            config:    firestoreData.config
-              ? { ...DEFAULT_CONFIG, ...firestoreData.config }
-              : state.config,
-          } : {}),
+          auth:        { role: 'psicologa', patientId: null, loggedIn: true, firebaseUid: userUid },
+          patients:    data.patients,
+          sessions:    data.sessions,
+          documents:   data.documents,
+          anamneses:   data.anamneses,
+          plans:       data.plans,
+          attachments: [],   // nunca vem do Firestore (base64 excede limite)
+          config:      data.config
+            ? { ...DEFAULT_CONFIG, ...data.config }
+            : DEFAULT_CONFIG,
         })
       },
 
       // ── Aplicar dados do Firestore (restauração de sessão no App.tsx) ──
       applyFirestoreData: (data) => {
-        const hasData = data.patients.length > 0 || data.sessions.length > 0
-        if (!hasData) return
         set({
           patients:  data.patients,
           sessions:  data.sessions,
           documents: data.documents,
           anamneses: data.anamneses,
           plans:     data.plans,
-          ...(data.config ? { config: { ...DEFAULT_CONFIG, ...data.config } } : {}),
+          config:    data.config ? { ...DEFAULT_CONFIG, ...data.config } : DEFAULT_CONFIG,
+        })
+      },
+
+      // ── Migração manual: envia dados locais para o Firestore ──────────
+      // Chamada pelo usuário quando quiser subir dados que existiam antes
+      // de configurar o Firebase. Disponível em Configurações.
+      migrateLocalToFirestore: async () => {
+        const { auth, patients, sessions, documents, anamneses, plans, config } = get()
+        if (!auth.firebaseUid) return
+        await pushAllToFirestore(auth.firebaseUid, {
+          patients, sessions, documents, anamneses, plans, config,
         })
       },
 

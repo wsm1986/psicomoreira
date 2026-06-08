@@ -125,6 +125,30 @@
 .eyeBtn:hover { color: var(--text2); }
 .hint { font-size: 11px; color: var(--text3); }
 
+/* ── Migração Firebase ───────────────────────────────────────────────────── */
+.migrateBlock {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--blue) 7%, #fff);
+  border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.migrateText { font-size: 13px; color: var(--text2); flex: 1; min-width: 200px; }
+.btnMigrate {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 8px;
+  background: color-mix(in srgb, var(--blue) 14%, transparent);
+  color: var(--blue); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s; white-space: nowrap;
+  border: 1px solid color-mix(in srgb, var(--blue) 30%, transparent);
+}
+.btnMigrate:hover:not(:disabled) { background: color-mix(in srgb, var(--blue) 22%, transparent); }
+.btnMigrate:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* ── Auto-backup / snapshots ─────────────────────────────────────────────── */
 .reminderRow {
   display: flex;
