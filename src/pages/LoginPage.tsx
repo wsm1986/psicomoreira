@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth'
 import { Lock, KeyRound, Eye, EyeOff, Heart, Mail } from 'lucide-react'
 import { usePsicoStore } from '../store/store'
 import { firebaseAuth, firebaseEnabled } from '../config/firebase'
@@ -17,6 +17,7 @@ export function LoginPage() {
 
   const requireEmail = Boolean(config.email)
 
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [tab,      setTab]      = useState<Tab>('psicologa')
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
@@ -80,6 +81,37 @@ export function LoginPage() {
     }, 400)
   }
 
+  // ── Login com Google ─────────────────────────────────────────────────────
+  async function handleGoogleLogin() {
+    if (!firebaseAuth) return
+    setGoogleLoading(true)
+    setError('')
+    const provider = new GoogleAuthProvider()
+    try {
+      // Popup no desktop, redirect no mobile/iOS
+      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent)
+      let cred
+      if (isMobile) {
+        await signInWithRedirect(firebaseAuth, provider)
+        return // página vai recarregar
+      } else {
+        cred = await signInWithPopup(firebaseAuth, provider)
+      }
+      await loginWithFirebase(cred.user.uid)
+      navigate('/admin/dashboard')
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code ?? ''
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        // usuário fechou — não mostra erro
+      } else if (code === 'auth/unauthorized-domain') {
+        setError('Domínio não autorizado no Firebase. Adicione o domínio em Authentication → Settings → Domínios autorizados.')
+      } else {
+        setError('Erro ao entrar com Google. Tente novamente.')
+      }
+      setGoogleLoading(false)
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (tab === 'psicologa') handlePsicologaLogin()
@@ -131,6 +163,31 @@ export function LoginPage() {
           {tab === 'psicologa' ? (
             <>
               <p className={styles.welcomeText}>Bem-vinda de volta 🌿</p>
+
+              {/* Botão Google — só aparece quando Firebase está ativo */}
+              {firebaseEnabled && (
+                <>
+                  <button
+                    type="button"
+                    className={styles.btnGoogle}
+                    onClick={handleGoogleLogin}
+                    disabled={googleLoading}
+                  >
+                    {googleLoading ? (
+                      <span className={styles.spinner}/>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 48 48">
+                        <path fill="#4285F4" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.6 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"/>
+                        <path fill="#34A853" d="M6.3 14.7l6.6 4.8C14.6 16 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.5 6.5 29.5 4 24 4c-7.7 0-14.4 4.4-17.7 10.7z"/>
+                        <path fill="#FBBC05" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.5 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8L6 33c3.2 6.5 9.9 11 18 11z"/>
+                        <path fill="#EA4335" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.8l6.2 5.2C42 35.8 44 30.3 44 24c0-1.2-.1-2.4-.4-3.5z"/>
+                      </svg>
+                    )}
+                    {googleLoading ? 'Entrando...' : 'Entrar com Google'}
+                  </button>
+                  <div className={styles.divider}><span>ou</span></div>
+                </>
+              )}
 
               {/* E-mail — sempre quando Firebase está ativo */}
               {(firebaseEnabled || requireEmail) && (

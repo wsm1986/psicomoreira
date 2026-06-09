@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { onAuthStateChanged } from 'firebase/auth'
+import { onAuthStateChanged, getRedirectResult } from 'firebase/auth'
 import { usePsicoStore } from './store/store'
 import { firebaseAuth, firebaseEnabled } from './config/firebase'
 import { loadFromFirestore } from './services/firestore'
@@ -62,6 +62,16 @@ export default function App() {
       setAuthChecking(false)
       return
     }
+
+    // Trata retorno do signInWithRedirect (mobile/iOS)
+    getRedirectResult(firebaseAuth).then(async (result) => {
+      if (result?.user) {
+        const store = usePsicoStore.getState()
+        if (!store.auth.loggedIn) {
+          await store.loginWithFirebase(result.user.uid)
+        }
+      }
+    }).catch(() => {})
 
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
       const store = usePsicoStore.getState()

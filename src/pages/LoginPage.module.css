@@ -261,6 +261,47 @@
   border-top: 1px solid var(--border);
 }
 
+/* ── Google button ───────────────────────────────────────────────────────── */
+.btnGoogle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: #fff;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.btnGoogle:hover:not(:disabled) {
+  background: var(--bg3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+.btnGoogle:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Divider "ou" */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text3);
+  font-size: 12px;
+  margin: 2px 0;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
 /* Mobile */
 @media (max-width: 480px) {
   .card { padding: 28px 20px; }
