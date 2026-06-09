@@ -51,6 +51,20 @@ function configRef(uid: string) {
   return doc(firebaseDb!, `users/${uid}/config/main`)
 }
 
+/** Remove todos os campos `undefined` recursivamente.
+ *  Firestore rejeita undefined — usa null em seu lugar. */
+function sanitize<T>(obj: T): T {
+  if (Array.isArray(obj)) return obj.map(sanitize) as unknown as T
+  if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj as Record<string, unknown>)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, sanitize(v)])
+    ) as T
+  }
+  return obj
+}
+
 // ── Carga inicial (one-shot) ───────────────────────────────────────────────
 export async function loadFromFirestore(uid: string): Promise<FirestoreData> {
   if (!firebaseDb) {
@@ -174,7 +188,7 @@ async function safeSet(docRef: ReturnType<typeof doc>, data: object) {
     return
   }
   try {
-    await setDoc(docRef, data)
+    await setDoc(docRef, sanitize(data))
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
     console.error('[Firestore] setDoc error:', msg, docRef.path)
