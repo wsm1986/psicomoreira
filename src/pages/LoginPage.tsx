@@ -4,6 +4,7 @@ import { GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebas
 import { Heart } from 'lucide-react'
 import { usePsicoStore } from '../store/store'
 import { firebaseAuth } from '../config/firebase'
+import { APP_VERSION } from '../config/app'
 import styles from './LoginPage.module.css'
 
 export function LoginPage() {
@@ -83,7 +84,7 @@ export function LoginPage() {
           {loading ? 'Entrando...' : 'Entrar com Google'}
         </button>
 
-        <p className={styles.footer}>🔒 Seus dados são protegidos conforme a LGPD</p>
+        <p className={styles.footer}>🔒 Seus dados são protegidos conforme a LGPD · {APP_VERSION}</p>
       </div>
     </div>
   )
