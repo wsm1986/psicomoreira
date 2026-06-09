@@ -259,7 +259,7 @@ export function SettingsPage() {
                 </button>
               </div>
               {errors.password && <span className={styles.errMsg}>{errors.password.message}</span>}
-              <span className={styles.hint}>Senha usada na aba "Psicóloga" da tela de login</span>
+              <span className={styles.hint}>Campo legado — login agora é exclusivo via Google</span>
             </div>
 
           </div>
