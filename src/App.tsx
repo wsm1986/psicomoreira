@@ -1,28 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { onAuthStateChanged, getRedirectResult } from 'firebase/auth'
 import { usePsicoStore } from './store/store'
-import { firebaseAuth, firebaseEnabled } from './config/firebase'
-import { loadFromFirestore } from './services/firestore'
-import { LoginPage }        from './pages/LoginPage'
-import { Layout }           from './components/Layout'
-import { Dashboard }        from './pages/Dashboard'
-import { PatientsPage }     from './pages/PatientsPage'
-import { PatientProfile }   from './pages/PatientProfile'
-import { SessionForm }      from './pages/SessionForm'
-import { AgendaPage }       from './pages/AgendaPage'
-import { FinancialPage }    from './pages/FinancialPage'
-import { SettingsPage }     from './pages/SettingsPage'
-import { HelpPage }         from './pages/HelpPage'
+import { firebaseAuth } from './config/firebase'
+import { LoginPage }     from './pages/LoginPage'
+import { Layout }        from './components/Layout'
+import { Dashboard }     from './pages/Dashboard'
+import { PatientsPage }  from './pages/PatientsPage'
+import { PatientProfile } from './pages/PatientProfile'
+import { SessionForm }   from './pages/SessionForm'
+import { AgendaPage }    from './pages/AgendaPage'
+import { FinancialPage } from './pages/FinancialPage'
+import { SettingsPage }  from './pages/SettingsPage'
+import { HelpPage }      from './pages/HelpPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { loggedIn, role } = usePsicoStore(s => s.auth)
-  if (!loggedIn)            return <Navigate to="/login" replace/>
-  if (role !== 'psicologa') return <Navigate to="/login" replace/>
+  const loading            = usePsicoStore(s => s.loading)
+  if (loading)              return <LoadingScreen/>
+  if (!loggedIn || role !== 'psicologa') return <Navigate to="/login" replace/>
   return <>{children}</>
 }
 
-// ── Splash de carregamento ─────────────────────────────────────────────────
 function LoadingScreen() {
   return (
     <div style={{
@@ -43,83 +42,64 @@ function LoadingScreen() {
   )
 }
 
-// ── App ────────────────────────────────────────────────────────────────────
 export default function App() {
-  // Enquanto o Firebase verifica a sessão, mostramos um splash
-  const [authChecking, setAuthChecking] = useState(firebaseEnabled)
+  // Guarda se já processou o primeiro onAuthStateChanged
+  // para não mostrar login em flash antes do Firebase responder
+  const authResolved = useRef(false)
+  const isAuthResolvedStore = usePsicoStore(s => s.authResolved)
 
   useEffect(() => {
-    if (!firebaseEnabled || !firebaseAuth) {
-      setAuthChecking(false)
-      return
-    }
+    if (!firebaseAuth) return
 
     // Trata retorno do signInWithRedirect (mobile/iOS)
-    getRedirectResult(firebaseAuth).then(async (result) => {
-      if (result?.user) {
-        const store = usePsicoStore.getState()
-        if (!store.auth.loggedIn) {
-          await store.loginWithFirebase(result.user.uid)
-        }
-      }
-    }).catch(() => {})
+    getRedirectResult(firebaseAuth).catch(() => {})
 
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
       const store = usePsicoStore.getState()
 
       if (user) {
-        // Firebase tem sessão ativa.
-        // Se o UID local é diferente do Firebase (ou não há sessão local),
-        // carrega sempre do Firestore — garante isolamento entre usuários.
-        const localUid = store.auth.firebaseUid
-        if (!store.auth.loggedIn || localUid !== user.uid) {
-          const data = await loadFromFirestore(user.uid)
-          store.applyFirestoreData(data)
-          usePsicoStore.setState({
-            auth: {
-              role:        'psicologa',
-              patientId:   null,
-              loggedIn:    true,
-              firebaseUid: user.uid,
-            },
-          })
+        // Só recarrega se não estiver logado com esse UID
+        if (!store.auth.loggedIn || store.auth.firebaseUid !== user.uid) {
+          await store.loginWithFirebase(user.uid)
         }
       } else {
-        // Firebase não tem sessão — garante que o store está limpo
-        if (store.auth.firebaseUid) {
+        // Firebase não tem sessão — limpa store se havia
+        if (store.auth.loggedIn) {
           store.logout()
         }
       }
 
-      setAuthChecking(false)
+      // Marca que o Firebase já respondeu (libera as rotas)
+      if (!authResolved.current) {
+        authResolved.current = true
+        usePsicoStore.setState({ authResolved: true })
+      }
     })
 
     return unsubscribe
   }, [])
 
-  if (authChecking) return <LoadingScreen/>
+  // Enquanto Firebase não respondeu, mostra loading
+  if (!isAuthResolvedStore) return <LoadingScreen/>
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
         <Route path="/login" element={<LoginPage/>}/>
 
-        {/* Psicóloga */}
         <Route path="/admin" element={<RequireAuth><Layout/></RequireAuth>}>
-          <Route index element={<Navigate to="dashboard" replace/>}/>
-          <Route path="dashboard"          element={<Dashboard/>}/>
-          <Route path="pacientes"          element={<PatientsPage/>}/>
-          <Route path="pacientes/:id"      element={<PatientProfile/>}/>
-          <Route path="sessoes/nova"       element={<SessionForm/>}/>
-          <Route path="sessoes/:id/editar" element={<SessionForm/>}/>
-          <Route path="agenda"             element={<AgendaPage/>}/>
-          <Route path="financeiro"         element={<FinancialPage/>}/>
-          <Route path="configuracoes"      element={<SettingsPage/>}/>
-          <Route path="ajuda"              element={<HelpPage/>}/>
+          <Route index                      element={<Navigate to="dashboard" replace/>}/>
+          <Route path="dashboard"           element={<Dashboard/>}/>
+          <Route path="pacientes"           element={<PatientsPage/>}/>
+          <Route path="pacientes/:id"       element={<PatientProfile/>}/>
+          <Route path="sessoes/nova"        element={<SessionForm/>}/>
+          <Route path="sessoes/:id/editar"  element={<SessionForm/>}/>
+          <Route path="agenda"              element={<AgendaPage/>}/>
+          <Route path="financeiro"          element={<FinancialPage/>}/>
+          <Route path="configuracoes"       element={<SettingsPage/>}/>
+          <Route path="ajuda"               element={<HelpPage/>}/>
         </Route>
 
-        {/* Fallback */}
         <Route path="*" element={<Navigate to="/login" replace/>}/>
       </Routes>
     </BrowserRouter>

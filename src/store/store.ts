@@ -48,7 +48,8 @@ interface PsicoState {
   anamneses:   Anamnese[]
   plans:       PlanoTerapeutico[]
   config:      ClinicConfig
-  loading:     boolean               // carregando dados iniciais do Firestore
+  loading:      boolean              // carregando dados iniciais do Firestore
+  authResolved: boolean              // Firebase já respondeu ao menos uma vez
 
   // Auth
   logout:            () => void
@@ -113,6 +114,7 @@ export const usePsicoStore = create<PsicoState>()((set, get) => ({
   plans:            [],
   config:           DEFAULT_CONFIG,
   loading:          false,
+  authResolved:     false,
   _unsubRealtime:   null,
 
   // ── Realtime listeners ────────────────────────────────────────────────
