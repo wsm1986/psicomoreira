@@ -16,11 +16,9 @@ import { AnamneseTab } from './AnamneseTab'
 import { PlanoTab } from './PlanoTab'
 import { AttachmentsTab } from './AttachmentsTab'
 import styles from './PatientProfile.module.css'
+import { fmtBRL } from '../utils/format'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-function fmtBRL(n: number) {
-  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
 function initials(name: string) {
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }

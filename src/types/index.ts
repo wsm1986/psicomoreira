@@ -116,19 +116,19 @@ export interface PatientDocument {
 
 // ── Clinic config ──────────────────────────────────────────────────────────
 export interface ClinicConfig {
-  clinicName:        string
-  psychologistName:  string
-  crp:               string
-  email?:            string
-  phone:             string
-  address?:          string
-  sessionDuration:   number
-  sessionValue:      number
-  workingDays:       number[]
-  workingStart:      string
-  workingEnd:        string
-  lgpdText?:         string
-  password?:         string
+  clinicName:          string
+  psychologistName:    string
+  crp:                 string
+  email?:              string
+  phone:               string
+  address?:            string
+  sessionDuration:     number
+  sessionValue:        number
+  workingDays:         number[]
+  workingStart:        string
+  workingEnd:          string
+  lgpdText?:           string
+  lastFileBackupAt?:   string   // ISO — última vez que exportou backup manual
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────

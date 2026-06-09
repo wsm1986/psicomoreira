@@ -1,9 +1,52 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Cada usuário só acessa seus próprios dados
-    match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+    match /users/{uid}/patients/{patientId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['id', 'name', 'phone', 'status', 'startDate', 'createdAt', 'updatedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 200
+        && request.resource.data.status in ['ativo', 'encerrado', 'pausado'];
     }
+
+    match /users/{uid}/sessions/{sessionId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['id', 'patientId', 'date', 'time', 'status', 'value', 'paid', 'createdAt', 'updatedAt'])
+        && request.resource.data.status in ['agendada', 'realizada', 'falta', 'cancelada', 'remarcada']
+        && request.resource.data.value is number
+        && request.resource.data.value >= 0;
+    }
+
+    match /users/{uid}/documents/{docId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['id', 'patientId', 'name', 'type', 'createdAt'])
+        && request.resource.data.type in ['laudo', 'atestado', 'encaminhamento', 'contrato', 'outro'];
+    }
+
+    match /users/{uid}/anamneses/{patientId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['patientId', 'updatedAt']);
+    }
+
+    match /users/{uid}/plans/{patientId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['patientId', 'updatedAt']);
+    }
+
+    match /users/{uid}/config/main {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['clinicName', 'psychologistName', 'crp', 'sessionDuration', 'sessionValue'])
+        && request.resource.data.clinicName is string
+        && request.resource.data.sessionValue is number;
+    }
+
   }
 }

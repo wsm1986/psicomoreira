@@ -12,10 +12,7 @@ import {
 import { usePsicoStore } from '../store/store'
 import type { PaymentMethod } from '../types'
 import styles from './FinancialPage.module.css'
-
-function fmtBRL(n: number) {
-  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+import { fmtBRL } from '../utils/format'
 
 const METHOD_LABEL: Record<string, string> = {
   pix:      'PIX',

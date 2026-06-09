@@ -6,7 +6,7 @@ import {
   Menu, X, HelpCircle, FileText,
 } from 'lucide-react'
 import { usePsicoStore, type BackupData } from '../store/store'
-import { saveSnapshot, isReminderDue } from '../utils/autoBackup'
+import { isReminderDue } from '../utils/autoBackup'
 import { BackupReminder } from './BackupReminder'
 import styles from './Layout.module.css'
 
@@ -39,20 +39,17 @@ export function Layout() {
   const [mobileOpen,   setMobileOpen]   = useState(false)
   const [showReminder, setShowReminder] = useState(false)
 
-  // ── Auto-snapshot ao abrir o app ──────────────────────────────────────────
+  // ── Verifica lembrete de backup manual ───────────────────────────────────
   useEffect(() => {
-    // Só salva se houver dados reais
     if (patients.length === 0 && sessions.length === 0) return
-
-    const data: BackupData = {
-      version:    '1.1',
-      exportedAt: new Date().toISOString(),
-      patients, sessions, documents, attachments, anamneses, plans, config,
+    // Lembrete baseado em Firestore (config.lastFileBackupAt) ou localStorage legacy
+    const lastBackup = config.lastFileBackupAt ?? null
+    if (!lastBackup) {
+      setShowReminder(isReminderDue())
+    } else {
+      const daysSince = (Date.now() - new Date(lastBackup).getTime()) / 86_400_000
+      setShowReminder(daysSince >= 7)
     }
-    saveSnapshot(data)
-
-    // Verifica se lembrete de backup de arquivo é necessário
-    setShowReminder(isReminderDue())
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])   // só no mount
 

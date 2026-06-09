@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { format, parseISO, formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Save, User, Clock, DollarSign, Shield, Eye, EyeOff, Download, Upload, AlertTriangle, CheckCircle2, History, RefreshCw } from 'lucide-react'
+import { Save, User, Clock, DollarSign, Shield, Download, Upload, AlertTriangle, CheckCircle2, History, RefreshCw } from 'lucide-react'
 import { usePsicoStore, type BackupData } from '../store/store'
 import {
   getSnapshots, getBackupMeta, setBackupMeta,
@@ -25,7 +25,6 @@ const schema = z.object({
   sessionValue:     z.coerce.number().min(0),
   workingStart:     z.string(),
   workingEnd:       z.string(),
-  password:         z.string().min(4, 'Mínimo 4 caracteres').optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -53,7 +52,6 @@ export function SettingsPage() {
   const migrateLocalToFirestore= usePsicoStore(s => s.migrateLocalToFirestore)
 
   const [migrateStatus,  setMigrateStatus]  = useState<'idle' | 'running' | 'ok' | 'error'>('idle')
-  const [showPwd,        setShowPwd]        = useState(false)
   const [importStatus,   setImportStatus]   = useState<'idle' | 'ok' | 'error'>('idle')
   const [importMsg,      setImportMsg]      = useState('')
   const [snapshots]      = useState<Snapshot[]>(() => getSnapshots())
@@ -84,6 +82,7 @@ export function SettingsPage() {
     URL.revokeObjectURL(url)
     markFileBackupDone()
     setLocalBackupMeta(getBackupMeta())
+    editConfig({ lastFileBackupAt: new Date().toISOString() })
   }
 
   // ── Restaurar snapshot ────────────────────────────────────────────────────
@@ -145,7 +144,6 @@ export function SettingsPage() {
       sessionValue:     config.sessionValue,
       workingStart:     config.workingStart,
       workingEnd:       config.workingEnd,
-      password:         config.password ?? 'psico2025',
     },
   })
 
@@ -162,7 +160,6 @@ export function SettingsPage() {
       sessionValue:     config.sessionValue,
       workingStart:     config.workingStart,
       workingEnd:       config.workingEnd,
-      password:         config.password ?? 'psico2025',
     })
   }, [config, reset])
 
@@ -180,14 +177,13 @@ export function SettingsPage() {
       clinicName:       data.clinicName,
       psychologistName: data.psychologistName,
       crp:              data.crp ?? '',
-      email:            data.email || undefined,
+      email:            data.email || '',
       phone:            data.phone ?? '',
-      address:          data.address || undefined,
+      address:          data.address || '',
       sessionDuration:  data.sessionDuration,
       sessionValue:     data.sessionValue,
       workingStart:     data.workingStart,
       workingEnd:       data.workingEnd,
-      password:         data.password || 'psico2025',
     })
     toast.success('Configurações salvas!')
     reset(data) // clear dirty
@@ -227,11 +223,10 @@ export function SettingsPage() {
             </div>
 
             <div className={styles.field}>
-              <label className={styles.label}>E-mail de acesso (opcional)</label>
+              <label className={styles.label}>E-mail de contato</label>
               <input {...register('email')} type="email" placeholder="seu@email.com"
                 className={errors.email ? styles.inputError : ''}/>
               {errors.email && <span className={styles.errMsg}>{errors.email.message}</span>}
-              <span className={styles.hint}>Se preenchido, será exigido no login junto com a senha</span>
             </div>
 
             <div className={styles.field}>
@@ -242,24 +237,6 @@ export function SettingsPage() {
             <div className={`${styles.field} ${styles.fullWidth}`}>
               <label className={styles.label}>Endereço</label>
               <input {...register('address')} placeholder="Rua, número, cidade..."/>
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>Senha de acesso (psicóloga)</label>
-              <div className={styles.pwdWrap}>
-                <input
-                  {...register('password')}
-                  type={showPwd ? 'text' : 'password'}
-                  placeholder="Mínimo 4 caracteres"
-                  className={errors.password ? styles.inputError : ''}
-                  style={{ paddingRight: 38 }}
-                />
-                <button type="button" className={styles.eyeBtn} onClick={() => setShowPwd(v => !v)} tabIndex={-1}>
-                  {showPwd ? <EyeOff size={15}/> : <Eye size={15}/>}
-                </button>
-              </div>
-              {errors.password && <span className={styles.errMsg}>{errors.password.message}</span>}
-              <span className={styles.hint}>Campo legado — login agora é exclusivo via Google</span>
             </div>
 
           </div>

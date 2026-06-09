@@ -263,21 +263,6 @@ export function PatientsPage() {
                   {errors.startDate && <span className={styles.errMsg}>{errors.startDate.message}</span>}
                 </div>
 
-                <div className={styles.field}>
-                  <label className={styles.label}>Código do portal (paciente)</label>
-                  <input
-                    {...register('accessCode')}
-                    placeholder="Ex: MARIA2024"
-                    style={{ textTransform: 'uppercase', fontFamily: 'DM Mono, monospace', letterSpacing: '0.08em' }}
-                    className={errors.accessCode ? styles.inputError : ''}
-                    onChange={e => {
-                      e.target.value = e.target.value.toUpperCase()
-                    }}
-                  />
-                  <span className={styles.hint}>Código para acesso ao portal da paciente</span>
-                  {errors.accessCode && <span className={styles.errMsg}>{errors.accessCode.message}</span>}
-                </div>
-
                 <div className={`${styles.field} ${styles.fullWidth}`}>
                   <label className={styles.label}>Observações iniciais</label>
                   <textarea {...register('notes')} placeholder="Demanda inicial, encaminhamento, etc."/>

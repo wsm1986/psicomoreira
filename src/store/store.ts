@@ -22,7 +22,6 @@ const DEFAULT_CONFIG: ClinicConfig = {
   workingDays:      [1, 2, 3, 4, 5],
   workingStart:     '08:00',
   workingEnd:       '18:00',
-  password:         '',
 }
 
 // ── Backup shape ───────────────────────────────────────────────────────────
@@ -240,7 +239,9 @@ export const usePsicoStore = create<PsicoState>()((set, get) => ({
   addSession: (s) => {
     const id  = crypto.randomUUID()
     const now = new Date().toISOString()
-    const session: Session = { ...s, id, createdAt: now, updatedAt: now }
+    // Calcula número sequencial da sessão para esse paciente
+    const sessionNumber = get().sessions.filter(ss => ss.patientId === s.patientId).length + 1
+    const session: Session = { ...s, id, sessionNumber, createdAt: now, updatedAt: now }
     set(st => ({ sessions: [...st.sessions, session] }))
     const u = uid(get); if (u) firestoreSync.session(u, session)
     return id

@@ -9,15 +9,13 @@ import { ptBR } from 'date-fns/locale'
 import {
   Users, CalendarCheck2, TrendingUp, AlertCircle,
   Plus, ChevronRight, Clock, Video, MapPin,
-  CheckCircle2, XCircle, RefreshCw, Activity, AlertTriangle,
+  CheckCircle2, XCircle, RefreshCw, Activity, AlertTriangle, Cake,
 } from 'lucide-react'
 import { usePsicoStore } from '../store/store'
 import styles from './Dashboard.module.css'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-function fmtBRL(n: number) {
-  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+import { fmtBRL } from '../utils/format'
 
 function sessionStatusLabel(status: string) {
   const map: Record<string, { label: string; color: string }> = {
@@ -133,6 +131,22 @@ export function Dashboard() {
     }),
     [sessions]
   )
+
+  // ── Aniversariantes do mês ────────────────────────────────────────────────
+  const birthdaysThisMonth = useMemo(() => {
+    const currentMonth = today.getMonth() + 1  // 1-12
+    return patients
+      .filter(p => p.status === 'ativo' && p.birthDate)
+      .map(p => {
+        const [, mm, dd] = p.birthDate!.split('-')
+        const day   = parseInt(dd, 10)
+        const month = parseInt(mm, 10)
+        const age   = today.getFullYear() - parseInt(p.birthDate!.split('-')[0], 10)
+        return { ...p, day, month, age }
+      })
+      .filter(p => p.month === currentMonth)
+      .sort((a, b) => a.day - b.day)
+  }, [patients, today])
 
   // ── Pacientes inativos (ativo mas sem sessão realizada há 28+ dias) ────────
   const inactivePatients = useMemo(() => {
@@ -356,6 +370,37 @@ export function Dashboard() {
 
         {/* Right column */}
         <div className={styles.rightCol}>
+
+          {/* Aniversariantes do mês */}
+          {birthdaysThisMonth.length > 0 && (
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle} style={{ display:'flex', alignItems:'center', gap:7 }}>
+                  <Cake size={15} style={{ color: 'var(--accent)' }}/>
+                  Aniversariantes — {format(today, 'MMMM', { locale: ptBR })}
+                </h2>
+                <span className={styles.badge} style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--accent)' }}>
+                  {birthdaysThisMonth.length}
+                </span>
+              </div>
+              <div className={styles.patientList}>
+                {birthdaysThisMonth.map(p => (
+                  <div key={p.id} className={styles.patientItem} onClick={() => navigate(`/admin/pacientes/${p.id}`)}>
+                    <div className={styles.sessionAvatar} style={{ background: 'color-mix(in srgb, var(--accent) 18%, var(--bg3))', color: 'var(--accent)' }}>
+                      {initials(p.name)}
+                    </div>
+                    <div className={styles.patientInfo}>
+                      <span className={styles.patientName}>{p.name}</span>
+                      <span className={styles.patientSub}>
+                        {format(new Date(today.getFullYear(), p.month - 1, p.day), "d 'de' MMMM", { locale: ptBR })} · {p.age} anos
+                      </span>
+                    </div>
+                    <ChevronRight size={15} style={{ color: 'var(--text3)', flexShrink:0 }}/>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Alerta de pacientes inativos */}
           {inactivePatients.length > 0 && (
