@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Download, X, ShieldCheck } from 'lucide-react'
-import { getBackupMeta, markFileBackupDone, dismissReminder } from '../utils/autoBackup'
-import type { BackupData } from '../store/store'
+import { usePsicoStore, type BackupData } from '../store/store'
+import { downloadBackupFile } from '../utils/autoBackup'
 import styles from './BackupReminder.module.css'
 
 interface Props {
@@ -11,31 +11,24 @@ interface Props {
 }
 
 export function BackupReminder({ buildBackup }: Props) {
-  const [visible, setVisible] = useState(true)
+  const [visible, setVisible]  = useState(true)
+  const editConfig             = usePsicoStore(s => s.editConfig)
+  const lastFileBackupAt       = usePsicoStore(s => s.config.lastFileBackupAt)
 
   if (!visible) return null
 
-  const meta    = getBackupMeta()
-  const lastDate = meta.lastFileBackupAt
-    ? format(parseISO(meta.lastFileBackupAt), "d 'de' MMM 'de' yyyy", { locale: ptBR })
+  const lastDate = lastFileBackupAt
+    ? format(parseISO(lastFileBackupAt), "d 'de' MMM 'de' yyyy", { locale: ptBR })
     : null
 
   function handleBackupNow() {
     const data = buildBackup()
-    const json = JSON.stringify(data, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = url
-    a.download = `psicomoreira-backup-${format(new Date(), 'yyyy-MM-dd')}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-    markFileBackupDone()
+    downloadBackupFile(data)
+    editConfig({ lastFileBackupAt: new Date().toISOString() })
     setVisible(false)
   }
 
   function handleDismiss() {
-    dismissReminder()
     setVisible(false)
   }
 

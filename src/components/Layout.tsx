@@ -6,7 +6,6 @@ import {
   Menu, X, HelpCircle, FileText,
 } from 'lucide-react'
 import { usePsicoStore, type BackupData } from '../store/store'
-import { isReminderDue } from '../utils/autoBackup'
 import { BackupReminder } from './BackupReminder'
 import styles from './Layout.module.css'
 
@@ -42,10 +41,9 @@ export function Layout() {
   // ── Verifica lembrete de backup manual ───────────────────────────────────
   useEffect(() => {
     if (patients.length === 0 && sessions.length === 0) return
-    // Lembrete baseado em Firestore (config.lastFileBackupAt) ou localStorage legacy
     const lastBackup = config.lastFileBackupAt ?? null
     if (!lastBackup) {
-      setShowReminder(isReminderDue())
+      setShowReminder(true)
     } else {
       const daysSince = (Date.now() - new Date(lastBackup).getTime()) / 86_400_000
       setShowReminder(daysSince >= 7)

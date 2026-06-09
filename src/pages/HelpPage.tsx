@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  HelpCircle, Lock, KeyRound, Users, CalendarDays,
+  HelpCircle, LogIn, Users, CalendarDays,
   Wallet, Settings, FileText, ChevronDown, ChevronUp,
   Heart, Download, Shield, Star,
 } from 'lucide-react'
@@ -15,21 +15,21 @@ interface Topic {
 
 const TOPICS: Topic[] = [
   {
-    icon: <Lock size={16}/>,
+    icon: <LogIn size={16}/>,
     title: 'Acesso ao sistema',
     color: 'var(--accent)',
     items: [
       {
-        q: 'Como entro como psicóloga?',
-        a: 'Na tela de login, selecione a aba "Psicóloga" e informe a senha de acesso. A senha padrão inicial é psico2025. Você pode alterá-la em Configurações → Senha de acesso.',
+        q: 'Como faço login?',
+        a: 'Na tela de login, clique em "Entrar com Google". Você será redirecionado para a autenticação do Google e, ao confirmar, terá acesso imediato ao sistema. Não é necessário criar conta nem senha.',
       },
       {
-        q: 'Como minha paciente acessa o portal?',
-        a: 'Cadastre a paciente em Pacientes → Novo paciente e defina um Código do portal (ex: MARIA2024). A paciente acessa em psicomoreira.vercel.app → aba "Sou paciente" e digita esse código.',
+        q: 'Posso usar em outro dispositivo ou navegador?',
+        a: 'Sim. Como os dados ficam na nuvem (Firestore), basta entrar com a mesma conta Google em qualquer dispositivo e todos os seus dados estarão disponíveis automaticamente.',
       },
       {
-        q: 'O que a paciente vê no portal dela?',
-        a: 'A paciente vê apenas: próxima sessão agendada, histórico de sessões (data, horário, status e se está pago). As notas clínicas, prontuário e observações são totalmente sigilosos — ela não vê nada disso.',
+        q: 'O que acontece se eu fechar o navegador?',
+        a: 'Nada se perde. Todos os dados são salvos em tempo real no Firestore. Ao abrir novamente e fazer login com o Google, tudo estará exatamente como você deixou.',
       },
     ],
   },
@@ -47,8 +47,8 @@ const TOPICS: Topic[] = [
         a: 'Dentro do perfil da paciente (clique no nome na lista), use o seletor no canto superior direito para mudar entre Ativo, Pausado ou Encerrado. Ao encerrar, a data de encerramento é registrada automaticamente.',
       },
       {
-        q: 'O que é o Código do portal?',
-        a: 'É uma senha personalizada que você cria para cada paciente acessar o portal dela. Pode ser qualquer combinação (ex: ANA2024, JOAO01). Fica visível no perfil da paciente e em Configurações.',
+        q: 'Como editar os dados de uma paciente?',
+        a: 'Dentro do perfil da paciente, clique no ícone de lápis ao lado do nome ou nos campos de informação. As alterações são salvas automaticamente na nuvem.',
       },
     ],
   },
@@ -128,11 +128,11 @@ const TOPICS: Topic[] = [
       },
       {
         q: 'Com que frequência devo fazer backup?',
-        a: 'Recomendamos semanalmente ou após cadastrar novas pacientes/sessões importantes. Os dados ficam no localStorage do navegador — se você limpar os dados do navegador, os dados são perdidos sem um backup.',
+        a: 'Recomendamos semanalmente como precaução extra. Os dados ficam seguros na nuvem (Firestore), mas ter um arquivo local é uma camada adicional de segurança para casos extremos.',
       },
       {
-        q: 'O backup funciona em outro dispositivo?',
-        a: 'Sim! Exporte o JSON em um dispositivo e importe em outro. Assim você migra todos os dados perfeitamente, inclusive para usar em outro navegador ou computador.',
+        q: 'O backup funciona para migrar dados?',
+        a: 'Sim! O arquivo JSON contém todos os seus dados. Você pode importá-lo em qualquer conta ou usar como arquivo de histórico permanente.',
       },
     ],
   },
@@ -142,8 +142,8 @@ const TOPICS: Topic[] = [
     color: 'var(--text3)',
     items: [
       {
-        q: 'Como alterar a senha de acesso?',
-        a: 'Em Configurações → Dados profissionais → campo "Senha de acesso". Digite a nova senha (mínimo 4 caracteres) e clique em Salvar. A nova senha vale na próxima vez que você fizer login.',
+        q: 'Como alterar minha conta de acesso?',
+        a: 'O acesso é feito exclusivamente via Google. Para mudar a conta, faça logout e entre com outra conta Google. A senha e segurança da conta são gerenciadas diretamente pelo Google.',
       },
       {
         q: 'Como configurar os dias e horários de atendimento?',
@@ -158,15 +158,15 @@ const TOPICS: Topic[] = [
     items: [
       {
         q: 'Onde ficam armazenados os dados?',
-        a: 'Todos os dados ficam armazenados localmente no seu navegador (localStorage). Nenhuma informação é enviada para servidores externos ou terceiros. Somente você tem acesso.',
+        a: 'Todos os dados ficam armazenados na nuvem, no Firebase Firestore (Google Cloud). O acesso é restrito exclusivamente à sua conta Google — nenhum outro usuário, nem a equipe do sistema, consegue acessar.',
       },
       {
         q: 'As notas clínicas são sigilosas?',
-        a: 'Sim. As notas clínicas (demanda, intervenções, evolução, etc.) nunca aparecem no portal da paciente. A paciente vê apenas data, horário, modalidade e status de pagamento das sessões.',
+        a: 'Sim. As notas clínicas (demanda, intervenções, evolução, etc.) são visíveis apenas para você quando autenticada. Nenhum terceiro tem acesso a essas informações.',
       },
       {
         q: 'Como o sistema está em conformidade com a LGPD?',
-        a: 'Os dados sensíveis de saúde são armazenados apenas localmente no seu dispositivo, sem transmissão para terceiros. O acesso é protegido por senha (psicóloga) e código individual (paciente). Você pode excluir todos os dados a qualquer momento limpando o localStorage do navegador.',
+        a: 'Os dados sensíveis de saúde ficam em ambiente de nuvem seguro com acesso restrito por autenticação Google. Você pode exportar e excluir seus dados a qualquer momento. Nenhuma informação é compartilhada com terceiros.',
       },
     ],
   },
@@ -192,10 +192,10 @@ export function HelpPage() {
 
       {/* Quick cards */}
       <div className={styles.quickGrid}>
-        <QuickCard icon={<Lock size={18}/>}       color="var(--accent)"  title="Psicóloga"  desc="Senha: psico2025 (altere em Configurações)"/>
-        <QuickCard icon={<KeyRound size={18}/>}   color="var(--purple)"  title="Paciente"   desc="Código criado no cadastro da paciente"/>
+        <QuickCard icon={<LogIn size={18}/>}       color="var(--accent)"  title="Login"      desc="Autenticação via conta Google"/>
+        <QuickCard icon={<Shield size={18}/>}     color="var(--purple)"  title="Segurança"  desc="Dados na nuvem, acesso restrito a você"/>
         <QuickCard icon={<Download size={18}/>}   color="var(--amber)"   title="Backup"     desc="Configurações → Exportar JSON"/>
-        <QuickCard icon={<Star size={18}/>}       color="var(--green)"   title="Dica"       desc="Faça backup semanal para não perder dados"/>
+        <QuickCard icon={<Star size={18}/>}       color="var(--green)"   title="Dica"       desc="Faça backup semanal como precaução extra"/>
       </div>
 
       {/* Topic accordion */}

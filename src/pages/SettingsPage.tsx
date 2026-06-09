@@ -3,14 +3,9 @@ import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { format, parseISO, formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { Save, User, Clock, DollarSign, Shield, Download, Upload, AlertTriangle, CheckCircle2, History, RefreshCw } from 'lucide-react'
+import { Save, User, Clock, DollarSign, Shield, Download, Upload, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { usePsicoStore, type BackupData } from '../store/store'
-import {
-  getSnapshots, getBackupMeta, setBackupMeta,
-  markFileBackupDone, type Snapshot,
-} from '../utils/autoBackup'
+import { downloadBackupFile } from '../utils/autoBackup'
 import { firebaseEnabled } from '../config/firebase'
 import styles from './SettingsPage.module.css'
 
@@ -54,9 +49,6 @@ export function SettingsPage() {
   const [migrateStatus,  setMigrateStatus]  = useState<'idle' | 'running' | 'ok' | 'error'>('idle')
   const [importStatus,   setImportStatus]   = useState<'idle' | 'ok' | 'error'>('idle')
   const [importMsg,      setImportMsg]      = useState('')
-  const [snapshots]      = useState<Snapshot[]>(() => getSnapshots())
-  const [backupMeta,     setLocalBackupMeta]= useState(getBackupMeta)
-  const [restoreConfirm, setRestoreConfirm] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // ── Export JSON ────────────────────────────────────────────────────────────
@@ -72,40 +64,8 @@ export function SettingsPage() {
       plans,
       config,
     }
-    const json = JSON.stringify(data, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = url
-    a.download = `psicomoreira-backup-${format(new Date(), 'yyyy-MM-dd')}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-    markFileBackupDone()
-    setLocalBackupMeta(getBackupMeta())
+    downloadBackupFile(data)
     editConfig({ lastFileBackupAt: new Date().toISOString() })
-  }
-
-  // ── Restaurar snapshot ────────────────────────────────────────────────────
-  async function handleRestoreSnapshot(snap: Snapshot) {
-    try {
-      const data = JSON.parse(snap.data) as BackupData
-      if (!data.patients || !data.sessions) throw new Error()
-      await importBackup(data)
-      setRestoreConfirm(null)
-      setImportStatus('ok')
-      setImportMsg(`✓ Restaurado: snapshot de ${format(parseISO(snap.savedAt), "d/MM/yyyy 'às' HH:mm", { locale: ptBR })}`)
-      toast.success('Backup restaurado com sucesso!')
-    } catch {
-      setImportStatus('error')
-      setImportMsg('Snapshot corrompido. Não foi possível restaurar.')
-    }
-    setRestoreConfirm(null)
-  }
-
-  // ── Frequência do lembrete ────────────────────────────────────────────────
-  function handleReminderDays(days: number) {
-    setBackupMeta({ reminderDays: days })
-    setLocalBackupMeta(getBackupMeta())
   }
 
   // ── Import JSON ────────────────────────────────────────────────────────────
@@ -370,98 +330,16 @@ export function SettingsPage() {
           )}
         </section>
 
-        {/* ── Auto-backup ──────────────────────────────────────────────── */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}><History size={15}/> Backup automático</h2>
-          <p className={styles.sectionDesc}>
-            O sistema salva automaticamente uma cópia dos dados no seu navegador toda vez que você abre o app.
-            Essas cópias permitem restaurar uma versão anterior sem precisar de um arquivo externo.
-          </p>
-
-          {/* Frequência do lembrete de arquivo */}
-          <div className={styles.reminderRow}>
-            <span className={styles.reminderLabel}>Lembrar de exportar arquivo a cada:</span>
-            <div className={styles.reminderBtns}>
-              {([7, 14, 30] as const).map(d => (
-                <button
-                  key={d}
-                  type="button"
-                  className={`${styles.reminderBtn} ${backupMeta.reminderDays === d ? styles.reminderBtnActive : ''}`}
-                  onClick={() => handleReminderDays(d)}
-                >
-                  {d === 7 ? '7 dias' : d === 14 ? '14 dias' : '30 dias'}
-                </button>
-              ))}
-            </div>
-            {backupMeta.lastFileBackupAt && (
-              <span className={styles.lastBackupInfo}>
-                Último arquivo: {formatDistanceToNow(parseISO(backupMeta.lastFileBackupAt), { locale: ptBR, addSuffix: true })}
-              </span>
-            )}
-          </div>
-
-          {/* Lista de snapshots */}
-          {snapshots.length === 0 ? (
-            <p className={styles.snapshotEmpty}>
-              Nenhum snapshot automático ainda. Abra o app com dados cadastrados para gerar o primeiro.
-            </p>
-          ) : (
-            <div className={styles.snapshotList}>
-              {snapshots.map((snap, idx) => (
-                <div key={snap.id} className={styles.snapshotRow}>
-                  <div className={styles.snapshotInfo}>
-                    <span className={styles.snapshotDate}>
-                      {format(parseISO(snap.savedAt), "d 'de' MMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
-                      {idx === 0 && <span className={styles.snapshotLatest}> · mais recente</span>}
-                    </span>
-                    <span className={styles.snapshotMeta}>
-                      {snap.patientsCount} paciente{snap.patientsCount !== 1 ? 's' : ''} · {snap.sessionsCount} sessão{snap.sessionsCount !== 1 ? 'ões' : ''}
-                      {!snap.hasAttachments && snap.patientsCount > 0 && ' · sem anexos'}
-                    </span>
-                  </div>
-                  {restoreConfirm === snap.id ? (
-                    <div className={styles.snapshotConfirm}>
-                      <span>Restaurar e substituir dados atuais?</span>
-                      <button
-                        type="button"
-                        className={styles.btnConfirmRestore}
-                        onClick={() => handleRestoreSnapshot(snap)}
-                      >
-                        Confirmar
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.btnCancelRestore}
-                        onClick={() => setRestoreConfirm(null)}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className={styles.btnRestore}
-                      onClick={() => setRestoreConfirm(snap.id)}
-                    >
-                      <RefreshCw size={13}/> Restaurar
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
         {/* ── LGPD ─────────────────────────────────────────────────────── */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}><Shield size={15}/> Privacidade e LGPD</h2>
           <div className={styles.lgpdBox}>
             <p>Este sistema armazena dados sensíveis de saúde conforme a <strong>LGPD (Lei 13.709/2018)</strong>.</p>
             <ul>
-              <li>Todos os dados são armazenados localmente no seu dispositivo</li>
-              <li>Nenhuma informação é enviada para servidores externos</li>
-              <li>O acesso da paciente ao portal é protegido por código individual</li>
-              <li>Notas clínicas nunca são exibidas para a paciente</li>
+              <li>Todos os dados são armazenados na nuvem (Firestore) com acesso restrito à sua conta Google</li>
+              <li>O acesso é protegido por autenticação Google — somente você tem acesso</li>
+              <li>Notas clínicas são 100% privadas e nunca exibidas a terceiros</li>
+              <li>O backup em arquivo JSON permite exportar e migrar seus dados a qualquer momento</li>
             </ul>
           </div>
         </section>
