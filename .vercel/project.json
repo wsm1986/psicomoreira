@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_Q2lC9mkHMPXoomhvkqg3hxK2Gw3U",
+  "orgId": "team_TUlDrtaocIgW2nF5Fz6AWoKR",
+  "projectName": "psicomoreira",
+  "settings": {
+    "createdAt": 1779747858515,
+    "framework": "vite",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}
