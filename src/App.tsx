@@ -14,20 +14,11 @@ import { AgendaPage }       from './pages/AgendaPage'
 import { FinancialPage }    from './pages/FinancialPage'
 import { SettingsPage }     from './pages/SettingsPage'
 import { HelpPage }         from './pages/HelpPage'
-import { PatientLayout }    from './components/PatientLayout'
-import { PatientDashboard } from './pages/patient/PatientDashboard'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { loggedIn, role } = usePsicoStore(s => s.auth)
   if (!loggedIn)            return <Navigate to="/login" replace/>
-  if (role !== 'psicologa') return <Navigate to="/paciente" replace/>
-  return <>{children}</>
-}
-
-function RequirePatient({ children }: { children: React.ReactNode }) {
-  const { loggedIn, role } = usePsicoStore(s => s.auth)
-  if (!loggedIn)           return <Navigate to="/login" replace/>
-  if (role !== 'paciente') return <Navigate to="/admin/dashboard" replace/>
+  if (role !== 'psicologa') return <Navigate to="/login" replace/>
   return <>{children}</>
 }
 
@@ -126,11 +117,6 @@ export default function App() {
           <Route path="financeiro"         element={<FinancialPage/>}/>
           <Route path="configuracoes"      element={<SettingsPage/>}/>
           <Route path="ajuda"              element={<HelpPage/>}/>
-        </Route>
-
-        {/* Paciente portal */}
-        <Route path="/paciente" element={<RequirePatient><PatientLayout/></RequirePatient>}>
-          <Route index element={<PatientDashboard/>}/>
         </Route>
 
         {/* Fallback */}
