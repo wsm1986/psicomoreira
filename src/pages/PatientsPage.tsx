@@ -90,11 +90,11 @@ export function PatientsPage() {
     const id = addPatient({
       name:       data.name,
       phone:      data.phone,
-      email:      data.email || undefined,
-      birthDate:  data.birthDate || undefined,
+      email:      data.email      || '',
+      birthDate:  data.birthDate  || '',
       startDate:  data.startDate,
-      accessCode: data.accessCode ? data.accessCode.toUpperCase() : undefined,
-      notes:      data.notes || undefined,
+      accessCode: data.accessCode ? data.accessCode.toUpperCase() : '',
+      notes:      data.notes      || '',
       status:     'ativo',
     })
     toast.success('Paciente cadastrado com sucesso!')

@@ -556,15 +556,15 @@ function SessionRow({
 
   function handleSave() {
     onEditNotes(session.id, {
-      mood:             draft.mood             || undefined,
-      demands:          draft.demands          || undefined,
-      descricaoDemanda: draft.descricaoDemanda || undefined,
-      resumoSessao:     draft.resumoSessao     || undefined,
-      interventions:    draft.interventions    || undefined,
-      evolution:        draft.evolution        || undefined,
-      clinicalNotes:    draft.clinicalNotes    || undefined,
-      nextGoals:        draft.nextGoals        || undefined,
-      observacoes:      draft.observacoes      || undefined,
+      mood:             draft.mood             || '',
+      demands:          draft.demands          || '',
+      descricaoDemanda: draft.descricaoDemanda || '',
+      resumoSessao:     draft.resumoSessao     || '',
+      interventions:    draft.interventions    || '',
+      evolution:        draft.evolution        || '',
+      clinicalNotes:    draft.clinicalNotes    || '',
+      nextGoals:        draft.nextGoals        || '',
+      observacoes:      draft.observacoes      || '',
     })
     setEditing(false)
   }
