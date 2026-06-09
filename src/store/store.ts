@@ -27,14 +27,15 @@ const DEFAULT_CONFIG: ClinicConfig = {
 
 // ── Backup shape ───────────────────────────────────────────────────────────
 export interface BackupData {
-  version:    string
-  exportedAt: string
-  patients:   Patient[]
-  sessions:   Session[]
-  documents:  PatientDocument[]
-  anamneses?: Anamnese[]
-  plans?:     PlanoTerapeutico[]
-  config:     ClinicConfig
+  version:      string
+  exportedAt:   string
+  patients:     Patient[]
+  sessions:     Session[]
+  documents:    PatientDocument[]
+  attachments?: PatientAttachment[]   // ignorado no import (não sobe ao Firestore)
+  anamneses?:   Anamnese[]
+  plans?:       PlanoTerapeutico[]
+  config:       ClinicConfig
 }
 
 // ── Store shape ────────────────────────────────────────────────────────────
