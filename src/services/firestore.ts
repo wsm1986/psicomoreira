@@ -53,7 +53,11 @@ function configRef(uid: string) {
 
 // ── Carga inicial (one-shot) ───────────────────────────────────────────────
 export async function loadFromFirestore(uid: string): Promise<FirestoreData> {
-  if (!firebaseDb) return emptyData()
+  if (!firebaseDb) {
+    console.error('[Firestore] firebaseDb is null — Firebase not initialized')
+    return emptyData()
+  }
+  console.log('[Firestore] loadFromFirestore uid=', uid)
   try {
     const [pSnap, sSnap, dSnap, aSnap, plSnap, cfSnap] = await Promise.all([
       getDocs(col(uid, 'patients')),
@@ -63,7 +67,7 @@ export async function loadFromFirestore(uid: string): Promise<FirestoreData> {
       getDocs(col(uid, 'plans')),
       getDoc(configRef(uid)),
     ])
-    return {
+    const result = {
       patients:  pSnap.docs.map(d => d.data()  as Patient),
       sessions:  sSnap.docs.map(d => d.data()  as Session),
       documents: dSnap.docs.map(d => d.data()  as PatientDocument),
@@ -71,8 +75,14 @@ export async function loadFromFirestore(uid: string): Promise<FirestoreData> {
       plans:     plSnap.docs.map(d => d.data() as PlanoTerapeutico),
       config:    cfSnap.exists() ? cfSnap.data() as ClinicConfig : null,
     }
-  } catch (e) {
-    console.warn('[Firestore] loadFromFirestore error:', e)
+    console.log('[Firestore] loadFromFirestore ok — patients:', result.patients.length)
+    return result
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[Firestore] loadFromFirestore ERRO:', msg, e)
+    // Importa toast dinamicamente para não criar dep circular
+    const { toast } = await import('sonner')
+    toast.error(`Erro ao carregar dados: ${msg}`)
     return emptyData()
   }
 }
@@ -91,25 +101,39 @@ export function subscribeRealtimeData(
 
   const unsubs: Unsubscribe[] = []
 
+  function onErr(col: string) {
+    return async (e: Error) => {
+      console.error(`[Firestore] onSnapshot(${col}) error:`, e.message)
+      const { toast } = await import('sonner')
+      toast.error(`Erro ao sincronizar ${col}: ${e.message}`)
+    }
+  }
+
   unsubs.push(
-    onSnapshot(col(uid, 'patients'), snap => {
-      cb.onPatients(snap.docs.map(d => d.data() as Patient))
-    }),
-    onSnapshot(col(uid, 'sessions'), snap => {
-      cb.onSessions(snap.docs.map(d => d.data() as Session))
-    }),
-    onSnapshot(col(uid, 'documents'), snap => {
-      cb.onDocuments(snap.docs.map(d => d.data() as PatientDocument))
-    }),
-    onSnapshot(col(uid, 'anamneses'), snap => {
-      cb.onAnamneses(snap.docs.map(d => d.data() as Anamnese))
-    }),
-    onSnapshot(col(uid, 'plans'), snap => {
-      cb.onPlans(snap.docs.map(d => d.data() as PlanoTerapeutico))
-    }),
-    onSnapshot(configRef(uid), snap => {
-      cb.onConfig(snap.exists() ? snap.data() as ClinicConfig : null)
-    }),
+    onSnapshot(col(uid, 'patients'),
+      snap => { console.log('[Firestore] patients snap:', snap.docs.length); cb.onPatients(snap.docs.map(d => d.data() as Patient)) },
+      onErr('patients'),
+    ),
+    onSnapshot(col(uid, 'sessions'),
+      snap => cb.onSessions(snap.docs.map(d => d.data() as Session)),
+      onErr('sessions'),
+    ),
+    onSnapshot(col(uid, 'documents'),
+      snap => cb.onDocuments(snap.docs.map(d => d.data() as PatientDocument)),
+      onErr('documents'),
+    ),
+    onSnapshot(col(uid, 'anamneses'),
+      snap => cb.onAnamneses(snap.docs.map(d => d.data() as Anamnese)),
+      onErr('anamneses'),
+    ),
+    onSnapshot(col(uid, 'plans'),
+      snap => cb.onPlans(snap.docs.map(d => d.data() as PlanoTerapeutico)),
+      onErr('plans'),
+    ),
+    onSnapshot(configRef(uid),
+      snap => cb.onConfig(snap.exists() ? snap.data() as ClinicConfig : null),
+      onErr('config'),
+    ),
   )
 
   return () => unsubs.forEach(u => u())

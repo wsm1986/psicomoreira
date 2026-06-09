@@ -203,7 +203,10 @@ export const usePsicoStore = create<PsicoState>()((set, get) => ({
     const patient: Patient = { ...p, id, createdAt: now, updatedAt: now }
     // Otimista: atualiza memória imediatamente; Firestore confirma via onSnapshot
     set(s => ({ patients: [...s.patients, patient] }))
-    const u = uid(get); if (u) firestoreSync.patient(u, patient)
+    const u = uid(get)
+    console.log('[Store] addPatient — uid:', u, 'id:', id)
+    if (u) firestoreSync.patient(u, patient)
+    else console.error('[Store] addPatient — UID is null! Não vai salvar no Firestore.')
     return id
   },
 
