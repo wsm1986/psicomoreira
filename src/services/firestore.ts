@@ -145,14 +145,30 @@ export async function pushAllToFirestore(
 
 // ── Writes individuais ─────────────────────────────────────────────────────
 async function safeSet(docRef: ReturnType<typeof doc>, data: object) {
-  if (!firebaseDb) return
-  try { await setDoc(docRef, data) }
-  catch (e) { console.warn('[Firestore] setDoc error:', e) }
+  if (!firebaseDb) {
+    console.error('[Firestore] firebaseDb é null — verifique as variáveis de ambiente')
+    return
+  }
+  try {
+    await setDoc(docRef, data)
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[Firestore] setDoc error:', msg, docRef.path)
+    // Importa toast dinamicamente para não criar dep circular
+    const { toast } = await import('sonner')
+    toast.error(`Erro ao salvar: ${msg}`)
+  }
 }
 async function safeDel(docRef: ReturnType<typeof doc>) {
   if (!firebaseDb) return
-  try { await deleteDoc(docRef) }
-  catch (e) { console.warn('[Firestore] deleteDoc error:', e) }
+  try {
+    await deleteDoc(docRef)
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[Firestore] deleteDoc error:', msg)
+    const { toast } = await import('sonner')
+    toast.error(`Erro ao excluir: ${msg}`)
+  }
 }
 
 export const firestoreSync = {
