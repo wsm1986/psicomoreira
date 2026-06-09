@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { toast } from 'sonner'
 import { useParams, useNavigate } from 'react-router-dom'
 import { format, parseISO, differenceInYears, differenceInMonths, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -156,7 +157,11 @@ export function PatientProfile() {
           <select
             className={styles.statusSelect}
             value={patient.status}
-            onChange={e => setStatus(patient.id, e.target.value as PatientStatus)}
+            onChange={e => {
+              const s = e.target.value as PatientStatus
+              setStatus(patient.id, s)
+              toast.success(`Status atualizado para ${s === 'ativo' ? 'Ativo' : s === 'pausado' ? 'Pausado' : 'Encerrado'}`)
+            }}
             style={{ color: STATUS_COLOR[patient.status] }}
           >
             {(['ativo', 'pausado', 'encerrado'] as PatientStatus[]).map(s => (

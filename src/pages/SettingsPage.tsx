@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -94,6 +95,7 @@ export function SettingsPage() {
       setRestoreConfirm(null)
       setImportStatus('ok')
       setImportMsg(`✓ Restaurado: snapshot de ${format(parseISO(snap.savedAt), "d/MM/yyyy 'às' HH:mm", { locale: ptBR })}`)
+      toast.success('Backup restaurado com sucesso!')
     } catch {
       setImportStatus('error')
       setImportMsg('Snapshot corrompido. Não foi possível restaurar.')
@@ -119,6 +121,7 @@ export function SettingsPage() {
         await importBackup(data)
         setImportStatus('ok')
         setImportMsg(`✓ Importado: ${data.patients.length} pacientes, ${data.sessions.length} sessões`)
+        toast.success(`Importado: ${data.patients.length} pacientes, ${data.sessions.length} sessões`)
       } catch {
         setImportStatus('error')
         setImportMsg('Arquivo inválido ou corrompido.')
@@ -186,6 +189,7 @@ export function SettingsPage() {
       workingEnd:       data.workingEnd,
       password:         data.password || 'psico2025',
     })
+    toast.success('Configurações salvas!')
     reset(data) // clear dirty
   }
 

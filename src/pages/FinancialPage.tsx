@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { toast } from 'sonner'
 import {
   format, parseISO, startOfMonth, endOfMonth,
   isWithinInterval, subMonths,
@@ -153,6 +154,7 @@ export function FinancialPage() {
       paymentMethod: payingMethod,
     })
     setPayingId(null)
+    toast.success('Pagamento confirmado!')
   }
 
   // ─────────────────────────────────────────────────────────────────────────

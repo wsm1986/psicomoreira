@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth'
 import { Heart } from 'lucide-react'
+import { toast } from 'sonner'
 import { usePsicoStore } from '../store/store'
 import { firebaseAuth } from '../config/firebase'
 import { APP_VERSION } from '../config/app'
@@ -30,6 +31,7 @@ export function LoginPage() {
       }
       const cred = await signInWithPopup(firebaseAuth, provider)
       await loginWithFirebase(cred.user.uid)
+      toast.success(`Bem-vinda, ${cred.user.displayName?.split(' ')[0] ?? 'Joselaine'}! 🌿`)
       navigate('/admin/dashboard')
     } catch (err: unknown) {
       const code = (err as { code?: string }).code ?? ''

@@ -3,8 +3,9 @@
   "configurations": [
     {
       "name": "psicomoreira-dev",
-      "runtimeExecutable": "/Users/wellingtonmoreira/Documents/psicomoreira/node_modules/.bin/vite",
-      "runtimeArgs": ["--port", "5174", "--host"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5174"],
+      "cwd": "/Users/wellingtonmoreira/psicomoreira",
       "port": 5174
     }
   ]

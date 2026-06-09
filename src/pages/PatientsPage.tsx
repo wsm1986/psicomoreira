@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -96,6 +97,7 @@ export function PatientsPage() {
       notes:      data.notes || undefined,
       status:     'ativo',
     })
+    toast.success('Paciente cadastrado com sucesso!')
     reset()
     setShowModal(false)
     navigate(`/admin/pacientes/${id}`)

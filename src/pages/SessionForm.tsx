@@ -1,5 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { useEffect } from 'react'
+import { toast } from 'sonner'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -145,9 +146,11 @@ export function SessionForm() {
 
     if (isEdit && id) {
       editSession(id, payload)
+      toast.success('Sessão atualizada com sucesso!')
       navigate(patient ? `/admin/pacientes/${data.patientId}` : '/admin/agenda')
     } else {
       addSession(payload)
+      toast.success('Sessão agendada com sucesso!')
       navigate(patient ? `/admin/pacientes/${data.patientId}` : '/admin/agenda')
     }
   }
@@ -156,6 +159,7 @@ export function SessionForm() {
     if (!id) return
     if (window.confirm('Excluir esta sessão?')) {
       deleteSession(id)
+      toast.success('Sessão excluída.')
       navigate('/admin/agenda')
     }
   }
