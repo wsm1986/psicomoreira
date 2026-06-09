@@ -86,11 +86,11 @@ export function SettingsPage() {
   }
 
   // ── Restaurar snapshot ────────────────────────────────────────────────────
-  function handleRestoreSnapshot(snap: Snapshot) {
+  async function handleRestoreSnapshot(snap: Snapshot) {
     try {
       const data = JSON.parse(snap.data) as BackupData
       if (!data.patients || !data.sessions) throw new Error()
-      importBackup(data)
+      await importBackup(data)
       setRestoreConfirm(null)
       setImportStatus('ok')
       setImportMsg(`✓ Restaurado: snapshot de ${format(parseISO(snap.savedAt), "d/MM/yyyy 'às' HH:mm", { locale: ptBR })}`)
@@ -112,11 +112,11 @@ export function SettingsPage() {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const data = JSON.parse(ev.target?.result as string) as BackupData
         if (!data.patients || !data.sessions) throw new Error('Arquivo inválido')
-        importBackup(data)
+        await importBackup(data)
         setImportStatus('ok')
         setImportMsg(`✓ Importado: ${data.patients.length} pacientes, ${data.sessions.length} sessões`)
       } catch {
